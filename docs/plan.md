@@ -91,7 +91,7 @@ All services run locally in Docker. Raw data is volume-mounted from `./data/raw`
 
 ## Stage 0 — Project Repository and Development Environment
 
-**Current status:** in progress.
+**Current status:** complete (repo scaffold, Docker stack, config).
 
 ### Tasks
 - Create the shared Git repository.
@@ -143,6 +143,8 @@ No. Do this once as a team.
 ---
 
 ## Stage 1 — Explore and Understand MovieLens
+
+**Current status:** complete (exploration notebook + data quality summary).
 
 Focus on three files:
 
@@ -327,10 +329,10 @@ All components run in Docker on a single laptop. Minimize container count and me
 
 | Service | Image / notes | Memory hint |
 |---|---|---|
-| **kafka** | Bitnami Kafka, KRaft mode (no Zookeeper) | ~512 MB |
+| **kafka** | Apache Kafka, KRaft mode (no Zookeeper) | ~512 MB |
 | **elasticsearch** | Single-node, `discovery.type=single-node` | 512 MB–1 GB heap |
 | **kibana** | Matches ES version | ~512 MB |
-| **spark** | Bitnami Spark — 1 master + 1 worker | 1–2 GB |
+| **spark** | Apache Spark — 1 master + 1 worker | 1–2 GB |
 | **ollama** | Official Ollama image | 2–4 GB (model-dependent) |
 | **app** | Python — producer, Streamlit UI, AI client, validator | ~512 MB |
 
