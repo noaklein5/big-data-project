@@ -1,0 +1,337 @@
+BIU 8688697201Big Data and AI - Course Project
+
+Final project brief
+
+1   About
+
+This is the main project of the Big Data and AI course. Working in small teams, you will design and build an end-to-end big data use case, integrate at least one AI capability into it, and present a working demo to the class.
+
+2   Learning objectives
+
+By completing this project you will:
+
+•     Design and implement a working data pipeline (ETL or ELT) over real data.
+
+•     Apply at least one of the big data technologies covered in the course.
+
+•     Work with semi-structured or unstructured data, not only clean tabular data.
+
+•     Add an AI or LLM capability that operates on your data and produces value.
+
+•     Communicate your architecture, results, and trade-offs in a short technical presentation.
+
+3   The mission
+
+Build and demo a big data use case that uses at least one of the course technologies, and add at least one AI capability that operates on your data. You are free to bring in additional relevant technologies at your discretion. The goal is not to use the most tools, but to build something that works, that you understand, and that you can explain.
+
+4   Course topics you can build on
+
+The course covers the topics below. Any of them can serve as a building block for your project:
+
+•     Data types: structured, semi-structured, unstructured
+
+•     Containers and virtualization: Docker, VMs
+
+•     RDBMS and SQL databases; introduction to NoSQL databases
+
+•     ACID and CAP models
+
+•     OLTP, OLAP, ETL, ELT
+
+•     Apache Hadoop ecosystem and the Hadoop Distributed File System (HDFS)
+
+•     MapReduce
+
+•     Apache ZooKeeper
+
+•     Apache Sqoop (extract, load) and Apache Pig (transform)
+
+•     Hadoop workflow orchestration with Apache Oozie
+
+•     Apache Spark
+
+•     Batch vs streaming processing
+
+•     RESTful APIs
+
+•     Apache Kafka (message broker)
+
+•     Document databases and Elasticsearch
+
+•     Graph databases
+
+5   Project requirements
+
+Teams of 3 students. If the class size does not divide evenly, talk to the instructor. Your project has two parts, both required: a data pipeline (Part A) and an AI capability (Part B).
+
+5.1   Part A - Data and pipeline
+
+Define and build an ETL or ELT pipeline:
+
+•     Find a relevant dataset. Public sources such as Kaggle, data.gov, Hugging Face Datasets, or open APIs work well.
+
+•     Use at least semi-structured or unstructured data (for example JSON, logs, free text, reviews, images, audio). Clean tabular data alone is not sufficient.
+
+•     Use at least one of the following technologies (the more, the better):
+
+◦    NoSQL database, for example Elasticsearch
+
+◦    Distributed file system, for example HDFS
+
+◦    Object store, for example AWS S3 or MinIO
+
+◦    Table format, for example Apache Iceberg
+
+◦    Streaming technology, for example Apache Kafka
+
+◦    Optionally enrich the above with data from a SQL database or a network file share (NFS).
+
+•     Perform a meaningful data transformation. You may use any logic or query language.
+
+•     Load the results into a data repository of your choice.
+
+•     Produce and present results and insights.
+
+5.2   Part B - AI capability (required)
+
+Every team must integrate at least one AI capability that operates on the data itself - not only AI used to help you write code. Pick at least one option from section 6.2 and build it into your pipeline.
+
+6   Using AI in your project
+
+AI plays two distinct roles in this project. Both are encouraged, but only the second counts as the graded AI capability.
+
+6.1   AI as a build assistant (encouraged, not graded as the AI component)
+
+You may, and are encouraged to, use any LLM assistant (ChatGPT, Claude, Gemini, or others) to work faster:
+
+•     Generate and debug code
+
+•     Explore design ideas and compare technologies
+
+•     Draft your presentation and documentation
+
+•     Explain unfamiliar concepts or error messages
+
+Note: using an assistant to write code does not satisfy the AI requirement in Part B, and you must understand and be able to explain every part of what you submit.
+
+6.2   AI inside your pipeline (the required AI capability)
+
+Choose at least one of the following and integrate it into your pipeline. The more interesting and better understood, the better:
+
+a.   LLM-based enrichment as a transformation step. Call an LLM on unstructured records to classify, tag, extract entities, detect sentiment, summarize, translate, or redact sensitive fields. Example: enrich product reviews with a sentiment label and a topic tag, then aggregate.
+
+b.   Embeddings and semantic search. Generate vector embeddings for a text field and store them (for example in an Elasticsearch dense_vector field or a vector database), then run similarity or nearest-neighbor search instead of keyword search. This maps directly onto the Elasticsearch topic.
+
+c.   Retrieval-augmented generation (RAG). Build a small question-answering layer over your loaded data so a user can ask a question in plain language and get an answer grounded in your dataset.
+
+d.   Natural language to query (text-to-SQL or text-to-DSL). Let an LLM translate a plain-English question into a SQL query or an Elasticsearch query that runs against your repository and returns real results.
+
+e.   Streaming AI enrichment. In a Kafka and Spark Structured Streaming pipeline, apply an AI model (sentiment, classification, or embeddings) to each message in near real time as it flows through.
+
+f.    Machine learning and predictive analytics. Train or apply a model - clustering, classification, forecasting, or anomaly detection - on your transformed data (for example with Spark MLlib or scikit-learn) and surface the predictions as part of your insights.
+
+g.   Automated insight narrative. Feed your computed KPIs to an LLM to generate a written summary and recommendations. If you choose this, you must validate the output and clearly separate what was computed from what was generated.
+
+You may run models through a hosted API or locally (for example a small open model via Ollama or Hugging Face). Mind API costs and rate limits, and never send private or sensitive data to a third-party service.
+
+7   Deliverables
+
+•     Source code in a repository or zip archive, with a short README explaining how to run it.
+
+•     A one to two page design document: a short architecture diagram plus a description of the data flow, the technologies used, and the AI capability.
+
+•     A link to (or a sample of) your dataset.
+
+•     Your presentation slides.
+
+•     A live demo, or a recorded demo when a live one is not possible.
+
+8   Presentation and demo
+
+Each team gives a 5 to 10 minute presentation with a demo (when possible), followed by up to 3 minutes of questions. A strong presentation covers: the problem and dataset, your architecture, the AI capability and why you chose it, the results and insights, and the main challenges and trade-offs.
+
+9   Grading
+
+Indicative weighting (the instructor may adjust):
+
+Criterion
+
+Weight
+
+Data and pipeline (working ETL/ELT over semi-structured or unstructured data)
+
+25%
+
+Use of course technologies (NoSQL, HDFS, object store, table format, streaming, etc.)
+
+20%
+
+AI capability (correctness, depth, and your understanding of it)
+
+25%
+
+Results and insights
+
+15%
+
+Presentation and demo
+
+10%
+
+Understanding and Q&A
+
+5%
+
+ 
+
+The single most important factor is understanding. A simpler project that you fully grasp and can discuss beats a complex one you cannot explain.
+
+10   Responsible and honest use of AI
+
+AI assistants are allowed and encouraged, but the work and the understanding must be yours:
+
+•     Be ready to explain any line of code or design choice in your submission.
+
+•     Validate AI-generated content; LLMs can produce confident but wrong answers.
+
+•     Do not send private, personal, or sensitive data to third-party AI services.
+
+•     Credit your datasets and any external solution you adapted.
+
+11   Example use case
+
+There are many datasets on Kaggle and other repositories, and you may use any source you choose. If a repository comes with a challenge, you may implement a solution to that challenge, even an existing one. The assignment is successful as long as you understand the challenge, build a working solution, and can hold an intelligent conversation about it.
+
+Example dataset:
+
+https://www.kaggle.com/datasets/datazng/shopping-mall-customer-data-segmentation-analysis/data
+
+A possible pipeline:
+
+1.   Create a Kafka topic and load the dataset into it.
+
+2.   Using Apache Spark:
+
+a.   Read the data from the topic.
+
+b.   Apply logic and compute KPIs for the required insights.
+
+c.   Write the results to a local directory or to Elasticsearch.
+
+3.   Add an AI capability. For example, use Spark MLlib KMeans to segment customers, then feed the resulting segments to an LLM to generate plain-language recommendations.
+
+4.   Present the conclusions.
+
+ 
+
+Example insights (choose one or more):
+
+•     Income-related spending trends: targeting high-income customers may optimize marketing toward premium products or services.
+
+•     Gender-based spending differences: gender appears to have minimal impact on spending scores, which suggests gender-neutral marketing may be effective.
+
+•     Age-related spending patterns: younger customers show higher spending-score variability than older groups; tailoring strategies by age group may improve conversion.
+
+ 
+
+Tip for a stronger AI component: prefer a dataset that contains free text (for example product reviews, support tickets, or news articles). Text data lets you apply enrichment, embeddings, semantic search, or RAG, which are richer AI capabilities than working with numbers alone.
+
+Appendix A   Big data use cases by industry
+
+A catalog of common big data use cases, for inspiration only. You do not have to use any of these; they are a starting point for finding a problem you find interesting.
+
+Healthcare
+
+•     Predictive analytics: predict patient admissions, disease outbreaks, and disease progression.
+
+•     Personalized medicine: tailor treatments to individual genetic profiles and health data.
+
+•     Operational efficiency: optimize hospital operations and reduce wait times.
+
+Finance
+
+•     Fraud detection: identify and prevent fraudulent transactions in real time.
+
+•     Risk management: assess and mitigate financial risk through predictive modeling.
+
+•     Customer insights: analyze behavior to offer personalized products and services.
+
+Retail
+
+•     Personalization: deliver tailored shopping experiences and recommendations.
+
+•     Inventory management: optimize stock levels and supply-chain logistics.
+
+•     Market-basket analysis: understand purchasing patterns to drive cross-sell and upsell.
+
+Telecommunications
+
+•     Network optimization: analyze usage to improve performance and reduce downtime.
+
+•     Churn prediction: identify at-risk customers and apply retention strategies.
+
+•     Customer experience: improve service through sentiment analysis and targeting.
+
+Manufacturing
+
+•     Predictive maintenance: predict equipment failures before they occur.
+
+•     Quality control: monitor production to ensure quality and compliance.
+
+•     Supply-chain optimization: improve visibility and efficiency with data-driven decisions.
+
+Energy
+
+•     Smart grids: optimize distribution and reduce waste with real-time analysis.
+
+•     Predictive maintenance: maintain infrastructure to prevent outages.
+
+•     Consumption analysis: study usage patterns to promote efficiency and savings.
+
+Transportation and logistics
+
+•     Route optimization: find efficient routes to cut fuel use and delivery times.
+
+•     Fleet management: monitor vehicles for better performance and cost-efficiency.
+
+•     Predictive maintenance: anticipate and prevent vehicle breakdowns.
+
+Entertainment and media
+
+•     Content recommendations: suggest content based on viewing history.
+
+•     Audience analysis: tailor content and advertising to audience preferences.
+
+•     Content creation: use insights to create content that resonates.
+
+Government
+
+•     Public safety: support predictive and preventive policing through analysis.
+
+•     Resource allocation: allocate public resources based on demand patterns.
+
+•     Citizen engagement: improve communication with data-driven strategies.
+
+Education
+
+•     Personalized learning: tailor content to individual needs and learning styles.
+
+•     Predictive analytics: identify students at risk of dropping out and intervene.
+
+•     Operational efficiency: improve administration and resource management.
+
+Agriculture
+
+•     Precision farming: optimize planting, watering, and harvesting.
+
+•     Yield prediction: forecast crop yields from weather, soil, and history.
+
+•     Supply-chain management: improve efficiency from farm to market.
+
+Insurance
+
+•     Risk assessment: evaluate risk more accurately for underwriting and pricing.
+
+•     Fraud detection: identify and prevent fraudulent claims.
+
+•     Customer insights: personalize products and services from customer data.
