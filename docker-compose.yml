@@ -19,6 +19,13 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    mem_limit: 768m
     restart: unless-stopped
 
   elasticsearch:
@@ -32,6 +39,13 @@ services:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    mem_limit: 1g
     restart: unless-stopped
 
   kibana:
@@ -42,7 +56,15 @@ services:
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5601/api/status || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    mem_limit: 768m
     restart: unless-stopped
 
   spark:
@@ -59,6 +81,13 @@ services:
       - ./data/raw:/data/raw:ro
       - ./data/processed:/data/processed
       - ./src/spark:/opt/spark-jobs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    mem_limit: 768m
     restart: unless-stopped
 
   spark-worker:
@@ -68,12 +97,20 @@ services:
     environment:
       SPARK_WORKER_MEMORY: 1G
       SPARK_WORKER_CORES: 2
+      HOME: /tmp
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_RAW_RATINGS: raw_ratings
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: "9200"
+      DATA_RAW_PATH: /data/raw
     depends_on:
-      - spark
+      spark:
+        condition: service_healthy
     volumes:
       - ./data/raw:/data/raw:ro
       - ./data/processed:/data/processed
       - ./src/spark:/opt/spark-jobs
+    mem_limit: 1536m
     restart: unless-stopped
 
   ollama:
@@ -83,6 +120,13 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    mem_limit: 4g
     restart: unless-stopped
 
   app:
@@ -98,9 +142,13 @@ services:
       - ./src:/app/src
       - ./scripts:/app/scripts
     depends_on:
-      - kafka
-      - elasticsearch
-      - ollama
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    mem_limit: 512m
     restart: unless-stopped
 
 volumes:

@@ -26,5 +26,5 @@ data/processed/*
 .DS_Store
 Thumbs.db
 
-# Docker
-docker-compose.override.yml
+# Spark Ivy cache (downloaded JARs)
+src/spark/.ivy2/

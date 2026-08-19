@@ -13,6 +13,8 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 KAFKA_TOPIC_RAW_RATINGS = os.getenv("KAFKA_TOPIC_RAW_RATINGS", "raw_ratings")
 
 ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://elasticsearch:9200")
+KIBANA_URL = os.getenv("KIBANA_URL", "http://kibana:5601")
+SPARK_UI_URL = os.getenv("SPARK_UI_URL", "http://spark:8080")
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")

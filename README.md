@@ -2,11 +2,27 @@
 
 Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and natural-language search via Ollama.
 
+**Full setup guide:** [`docs/plan.md`](docs/plan.md) — step-by-step instructions, troubleshooting, and stage-by-stage plan.
+
+## Status
+
+| Stage | Description | Status |
+|---|---|---|
+| 0 | Repo, Docker stack, config | ✅ |
+| 1 | Data exploration | ✅ |
+| 2 | Locked data model | ✅ |
+| 3 | Docker infrastructure | ✅ |
+| 4 | Sample ETL (100k ratings → ES) | ✅ |
+| 5 | Kafka producer | ✅ |
+| 6 | Spark ETL (Kafka → ES) | ✅ |
+| 7+ | Gold queries, AI, demo, full 20M | ⬜ **Next** |
+
 ## Prerequisites
 
-- Docker Desktop (or Docker Engine + Compose)
-- ~8–12 GB free RAM on your laptop
+- Docker Desktop (must be **running** before any `docker` command)
+- ~8–12 GB free RAM
 - Git
+- Python 3.11+ (optional — for local notebooks only)
 
 ## Quick start
 
@@ -18,15 +34,23 @@ cd bigData
 cp .env.example .env
 ```
 
+Windows PowerShell:
+
+```powershell
+git clone <repository-url>
+cd bigData
+copy .env.example .env
+```
+
 ### 2. Download MovieLens 20M
 
-Download from [MovieLens 20M](https://grouplens.org/datasets/movielens/20m/) and extract into `data/raw/`:
+Download from [MovieLens 20M](https://grouplens.org/datasets/movielens/20m/) and extract into `data/raw/` with **exact filenames**:
 
 ```text
 data/raw/
-  ratings.csv
-  movies.csv
-  tags.csv
+  ratings.csv    ← not rating.csv
+  movies.csv     ← not movie.csv
+  tags.csv       ← not tag.csv
 ```
 
 These files are **not** committed to Git.
@@ -35,18 +59,21 @@ These files are **not** committed to Git.
 
 ```bash
 docker compose up -d --build
+docker compose ps
 ```
 
-Services use **Apache** official images for Kafka and Spark (Bitnami images are no longer available on Docker Hub).
+Wait until key containers show `(healthy)`. First start can take 2–5 minutes.
 
 | Service | URL | Purpose |
 |---|---|---|
+| Elasticsearch | http://localhost:9200 | Search and analytics store |
+| Kibana | http://localhost:5601 | Dashboards |
+| Spark master UI | http://localhost:8080 | Spark cluster |
+| Ollama | http://localhost:11434 | Local LLM |
 | Kafka | `localhost:9092` | Rating event stream |
-| Elasticsearch | `http://localhost:9200` | Search and analytics store |
-| Kibana | `http://localhost:5601` | Dashboards |
-| Spark master UI | `http://localhost:8080` | Spark cluster |
-| Ollama | `http://localhost:11434` | Local LLM |
-| App | `localhost:8501` | Demo UI (Streamlit — coming in Stage 11) |
+| App | http://localhost:8501 | Demo UI (Stage 11) |
+
+Services use **Apache** official images for Kafka and Spark.
 
 ### 4. Pull the Ollama model
 
@@ -54,17 +81,58 @@ Services use **Apache** official images for Kafka and Spark (Bitnami images are 
 docker exec movielens-ollama ollama pull llama3.2:3b
 ```
 
-### 5. Verify connectivity
+### 5. Initialize infrastructure
+
+Creates Kafka topic `raw_ratings` and Elasticsearch indexes:
+
+```bash
+docker exec movielens-app python scripts/setup_infrastructure.py
+```
+
+### 6. Verify connectivity
 
 ```bash
 docker exec movielens-app python scripts/verify_stack.py
 ```
 
-### 6. Create Elasticsearch indexes
+### 7. Run sample ETL (Stage 4)
+
+Loads 100,000 ratings into all three Elasticsearch indexes:
 
 ```bash
-docker exec movielens-app python -m src.elastic.setup_indexes
+docker exec movielens-app python scripts/run_sample_etl.py
+docker exec movielens-app python scripts/verify_sample_etl.py
 ```
+
+Optional: validate schema module
+
+```bash
+docker exec movielens-app python scripts/validate_schema.py
+```
+
+When all steps pass, you should have ~8k movies in Elasticsearch and 100k rating messages in Kafka (exact counts depend on sample settings).
+
+### 8. Stream ratings to Kafka (Stage 5)
+
+```bash
+docker exec movielens-app python scripts/run_producer.py
+docker exec movielens-app python scripts/verify_producer.py
+```
+
+Use `--full` to send all 20M ratings (slow). Re-running appends duplicate messages.
+
+### 9. Run Spark ETL (Stage 6)
+
+**Run from project root on your host** (uses `docker exec` internally):
+
+```powershell
+python scripts/run_spark_etl.py
+docker exec movielens-app python scripts/verify_spark_etl.py
+```
+
+**Order matters:** producer first (step 8), then Spark ETL. First Spark run downloads JARs (~1–2 min).
+
+See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
 
@@ -72,19 +140,31 @@ docker exec movielens-app python -m src.elastic.setup_indexes
 bigData/
 ├── data/
 │   ├── raw/              # MovieLens CSV files (not in Git)
-│   └── processed/        # Intermediate outputs
+│   └── processed/        # ETL parquet outputs (sample_*.parquet)
 ├── docs/
-│   └── plan.md           # Full project plan
+│   ├── plan.md                  # Full setup guide + project plan
+│   ├── schema.md                # Locked data model (Stage 2)
+│   ├── infrastructure.md        # Docker stack details (Stage 3)
+│   └── data_quality_summary.md  # Stage 1 findings
 ├── notebooks/
 │   └── 01_data_exploration.ipynb
 ├── scripts/
-│   └── verify_stack.py   # Health check for core services
+│   ├── setup_infrastructure.py  # Kafka topic + ES indexes
+│   ├── verify_stack.py          # Health check all services
+│   ├── validate_schema.py       # Schema consistency check
+│   ├── run_sample_etl.py        # Stage 4 ETL entry point
+│   ├── verify_sample_etl.py     # Post-load verification
+│   ├── run_producer.py          # Stage 5 Kafka producer
+│   ├── verify_producer.py       # Kafka message verification
+│   ├── run_spark_etl.py         # Stage 6 Spark submit (host)
+│   └── verify_spark_etl.py      # Spark ETL verification
 ├── src/
-│   ├── producer/         # Kafka producer
-│   ├── spark/            # Spark ETL jobs
-│   ├── elastic/          # Index setup and ES utilities
-│   ├── ai/               # NL → Elasticsearch query
-│   ├── app/              # Streamlit demo
+│   ├── etl/              # Sample ETL pipeline (Stage 4)
+│   ├── producer/         # Kafka producer (Stage 5) ✅
+│   ├── spark/            # Spark ETL jobs (Stage 6) ✅
+│   ├── elastic/          # Schema + index setup
+│   ├── ai/               # NL → Elasticsearch query (Stage 9)
+│   ├── app/              # Streamlit demo (Stage 11)
 │   └── config.py         # Shared configuration
 ├── docker-compose.yml
 ├── Dockerfile
@@ -94,51 +174,70 @@ bigData/
 
 ## Configuration
 
-Copy `.env.example` to `.env` and adjust if needed:
+Copy `.env.example` to `.env`. Use **Docker internal hostnames** (`kafka`, `elasticsearch`, etc.) — do not replace with `localhost`.
 
 | Variable | Default | Description |
 |---|---|---|
 | `DATA_MODE` | `sample` | `sample` or `full` |
 | `SAMPLE_RATINGS` | `100000` | Ratings to process in sample mode |
 | `OLLAMA_MODEL` | `llama3.2:3b` | Ollama model for query generation |
+| `KAFKA_TOPIC_RAW_RATINGS` | `raw_ratings` | Ratings stream topic |
+
+## Elasticsearch indexes
+
+| Index | Purpose | Document ID |
+|---|---|---|
+| `movies` | All-time stats per movie | `movie_id` |
+| `movies_by_release_year` | Release-year cohort rollups | `release_year` |
+| `movie_ratings_by_rating_year` | Rating activity by calendar year | `{movie_id}_{rating_year}` |
+
+Key field rule: use `release_year` (when the movie came out) vs `rating_year` (when the rating was submitted). Never use generic `year`.
+
+See [`docs/schema.md`](docs/schema.md) for the full locked schema.
 
 ## Useful commands
 
 ```bash
-# Start all services
+# Start / stop stack
 docker compose up -d
+docker compose down
+docker compose down -v          # fresh reset (deletes volumes)
+
+# Rebuild app after requirements.txt changes
+docker compose up -d --build app
 
 # View logs
 docker compose logs -f
 
-# Stop all services
-docker compose down
+# Re-run sample ETL
+docker exec movielens-app python scripts/run_sample_etl.py
+docker exec movielens-app python scripts/verify_sample_etl.py
 
-# Stop and remove volumes (fresh start)
-docker compose down -v
+# Stream ratings to Kafka
+docker exec movielens-app python scripts/run_producer.py
+docker exec movielens-app python scripts/verify_producer.py
 
-# Rebuild app container after code changes
-docker compose up -d --build app
+# Spark ETL (from project root on host)
+python scripts/run_spark_etl.py
+docker exec movielens-app python scripts/verify_spark_etl.py
+
+# Check ES document counts
+curl http://localhost:9200/movies/_count
+curl http://localhost:9200/movies_by_release_year/_count
+curl http://localhost:9200/movie_ratings_by_rating_year/_count
 ```
 
-## Elasticsearch indexes
+## Local notebook (optional)
 
-| Index | Purpose |
-|---|---|
-| `movies` | All-time stats per movie |
-| `movies_by_release_year` | Release-year cohort rollups |
-| `movie_ratings_by_rating_year` | Rating activity by calendar year |
+For Stage 1 data exploration outside Docker:
 
-See `docs/plan.md` for full schema and field semantics (`release_year` vs `rating_year`).
+```powershell
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt ipykernel
+.\.venv\Scripts\python -m ipykernel install --user --name=bigdata --display-name="Python (bigData)"
+```
 
-## Development stages
-
-This repo follows the staged plan in `docs/plan.md`:
-
-- **Stage 0** — repo, Docker stack, config ✅
-- **Stage 1** — data exploration notebook ✅
-- **Stage 2** — lock schema (team sync)
-- **Stage 3+** — ETL, AI, demo
+Open `notebooks/01_data_exploration.ipynb` with kernel **Python (bigData)**.
 
 ## Team
 

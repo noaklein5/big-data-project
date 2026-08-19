@@ -115,4 +115,4 @@ All `movieId` values in ratings and tags exist in `movies.csv`. Joins are clean.
 
 - [x] Exploration notebook: `notebooks/01_data_exploration.ipynb`
 - [x] Data quality summary: this document
-- [ ] Team review before Stage 2 schema lock
+- [x] Team review before Stage 2 schema lock
