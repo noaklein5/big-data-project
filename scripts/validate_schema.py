@@ -46,7 +46,7 @@ def main() -> int:
         ),
         INDEX_MOVIE_RATINGS_BY_RATING_YEAR: format_document_id(
             INDEX_MOVIE_RATINGS_BY_RATING_YEAR,
-            {"movie_id": 1, "rating_year": 2010},
+            {"movie_rating_year_id": "1_2010"},
         ),
     }
     expected = {"42", "2010", "1_2010"}

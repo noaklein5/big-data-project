@@ -108,10 +108,11 @@ This section is the **complete operator guide** for getting the project running 
 | 10   | Stream ratings into Kafka (Stage 5)                  |
 | 11   | Run Spark ETL → Elasticsearch (Stage 6)              |
 | 12   | Verify ES indexes and queries (Stage 7)              |
+| 13   | Run gold query verification (Stage 8)                |
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–7 are complete when Steps 1–12 pass.
+Stages 0–8 are complete when Steps 1–13 pass.
 
 ## Progress tracker
 
@@ -126,8 +127,8 @@ Stages 0–7 are complete when Steps 1–12 pass.
 | 5     | Kafka producer                     | ✅ Complete |
 | 6     | Spark ETL pipeline                 | ✅ Complete |
 | 7     | ES mappings + verify Spark output  | ✅ Complete |
-| 8     | Gold queries                       | ⬜ Next     |
-| 9–11  | AI + validator + Streamlit UI      | ⬜ Pending  |
+| 8     | Gold queries                       | ✅ Complete |
+| 9–11  | AI + validator + Streamlit UI      | ⬜ Next     |
 | 12    | Kibana dashboards                  | ⬜ Pending  |
 | 13    | Full integration (20M)             | ⬜ Pending  |
 | 14–15 | Evaluation + deliverables          | ⬜ Pending  |
@@ -685,6 +686,10 @@ Confirms all three indexes exist, mappings match the locked schema, data is load
 
 ```powershell
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
 ### What it checks (18 checks)
@@ -710,6 +715,43 @@ Elasticsearch index verification passed.
 | `src/elastic/verify_indexes.py` | Verification logic |
 | `src/elastic/setup_indexes.py` | Index creation from locked mappings |
 | `scripts/verify_es_indexes.py` | CLI entry point |
+
+---
+
+## Step 13 — Verify gold queries (Stage 8)
+
+Runs all 16 manual reference queries from `tests/gold_queries/queries.json` against Elasticsearch.
+
+**Prerequisites:** ETL data loaded (Steps 10–11).
+
+```powershell
+docker exec movielens-app python scripts/verify_gold_queries.py
+```
+
+### Run a single query
+
+```powershell
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_07 --show-response
+```
+
+### Expected output
+
+```text
+16/16 queries passed.
+Gold query verification passed.
+```
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `tests/gold_queries/catalog.yaml` | Question catalog |
+| `tests/gold_queries/queries.json` | Verified DSL bodies |
+| `src/elastic/gold_queries.py` | Query runner module |
+| `scripts/verify_gold_queries.py` | CLI entry point |
+
+See also `tests/gold_queries/README.md` for Kibana manual testing.
 
 ---
 
@@ -749,6 +791,10 @@ docker exec movielens-app python scripts/verify_producer.py
 python scripts/run_spark_etl.py
 docker exec movielens-app python scripts/verify_spark_etl.py
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 
 # Check ES index counts from host
 curl http://localhost:9200/movies/_count
@@ -841,6 +887,8 @@ docker exec movielens-app python scripts/run_producer.py        # Stage 5
 docker exec movielens-app python scripts/verify_producer.py     # Stage 5
 python scripts/run_spark_etl.py                                 # Stage 6 (host)
 docker exec movielens-app python scripts/verify_spark_etl.py    # Stage 6
+docker exec movielens-app python scripts/verify_es_indexes.py   # Stage 7
+docker exec movielens-app python scripts/verify_gold_queries.py # Stage 8
 ```
 
 Windows PowerShell equivalent:
@@ -859,9 +907,12 @@ docker exec movielens-app python scripts/verify_producer.py
 python scripts/run_spark_etl.py
 docker exec movielens-app python scripts/verify_spark_etl.py
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
 ```
 
-When all steps pass, the full sample pipeline (Kafka → Spark → ES) is working. **Next:** Stage 8 (gold queries) or Stage 9 (AI).
+When all steps pass, the full sample pipeline and gold queries are ready. **Next:** Stage 9 (AI).
 
 ---
 
@@ -932,6 +983,13 @@ docker exec movielens-app python scripts/verify_spark_etl.py
 
 # Stage 7 — verify mappings + queries
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Stage 8 — gold queries
+docker exec movielens-app python scripts/verify_gold_queries.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
 If `python` is not found on host, try: `py scripts/run_spark_etl.py`
@@ -970,6 +1028,10 @@ docker exec movielens-app python scripts/verify_stack.py
 docker exec movielens-app python scripts/verify_producer.py
 docker exec movielens-app python scripts/verify_spark_etl.py
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 docker exec movielens-ollama ollama list
 curl http://localhost:9200/movies/_count
 curl http://localhost:9200/movies_by_release_year/_count
@@ -1016,6 +1078,7 @@ python -m venv .venv
 | Ratings in Kafka       | `verify_producer.py` passes                                    |
 | Spark ETL loaded ES    | `verify_spark_etl.py` passes                                   |
 | ES indexes queryable   | `verify_es_indexes.py` passes (18/18 checks)                   |
+| Gold queries verified  | `verify_gold_queries.py` passes (16/16 queries)                |
 | Processed files saved  | `data/processed/sample_*.parquet` exist after Step 9           |
 
 
@@ -1592,6 +1655,10 @@ Follow **Step 12** in [Full Setup and Run Instructions](#full-setup-and-run-inst
 
 ```powershell
 docker exec movielens-app python scripts/verify_es_indexes.py
+
+# Gold queries (Stage 8)
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
 ### End result
@@ -1605,6 +1672,8 @@ Yes. Mappings can be developed using Stage 4 sample output while Spark is being 
 ---
 
 ## Stage 8 — Build Manual Elasticsearch Queries
+
+**Current status:** complete.
 
 Before using an LLM, manually create the queries the system is expected to generate.
 
@@ -1644,11 +1713,19 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 
 ### Tasks
 
-- Define 15–20 target natural-language questions covering all categories above.
-- Write the correct Elasticsearch DSL manually for each.
-- Specify which index each query targets.
-- Verify each query against Elasticsearch.
-- Save cases in `tests/gold_queries/` for later evaluation.
+- Define 15–20 target natural-language questions covering all categories above. ✅ (16 queries)
+- Write the correct Elasticsearch DSL manually for each. ✅
+- Specify which index each query targets. ✅
+- Verify each query against Elasticsearch. ✅
+- Save cases in `tests/gold_queries/` for later evaluation. ✅
+
+### How to run (completed)
+
+Follow **Step 13** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker exec movielens-app python scripts/verify_gold_queries.py
+```
 
 ### End result
 

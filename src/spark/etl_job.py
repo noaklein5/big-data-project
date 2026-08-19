@@ -11,6 +11,7 @@ from pyspark.sql.functions import (
     coalesce,
     col,
     collect_set,
+    concat,
     count,
     from_json,
     from_unixtime,
@@ -178,12 +179,20 @@ def build_rating_year_index(ratings: DataFrame, movies: DataFrame) -> DataFrame:
         count("*").alias("rating_count"),
     )
     titles = movies.select("movie_id", "title")
-    return rating_year_stats.join(titles, "movie_id", "left").select(
-        "movie_id",
-        "title",
-        "rating_year",
-        "rating_count",
-        "average_rating",
+    return (
+        rating_year_stats.join(titles, "movie_id", "left")
+        .withColumn(
+            "movie_rating_year_id",
+            concat(col("movie_id").cast("string"), lit("_"), col("rating_year").cast("string")),
+        )
+        .select(
+            "movie_id",
+            "title",
+            "rating_year",
+            "rating_count",
+            "average_rating",
+            "movie_rating_year_id",
+        )
     )
 
 
@@ -240,7 +249,7 @@ def run_etl(spark: SparkSession) -> dict[str, int]:
     write_to_elasticsearch(
         rating_year_out,
         INDEX_MOVIE_RATINGS_BY_RATING_YEAR,
-        "{movie_id}_{rating_year}",
+        "movie_rating_year_id",
     )
     print(f"  wrote index `{INDEX_MOVIE_RATINGS_BY_RATING_YEAR}`")
 

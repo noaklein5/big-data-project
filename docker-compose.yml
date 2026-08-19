@@ -141,6 +141,7 @@ services:
       - ./data/processed:/data/processed
       - ./src:/app/src
       - ./scripts:/app/scripts
+      - ./tests:/app/tests
     depends_on:
       kafka:
         condition: service_healthy

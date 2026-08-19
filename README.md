@@ -16,7 +16,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 5 | Kafka producer | ✅ |
 | 6 | Spark ETL (Kafka → ES) | ✅ |
 | 7 | ES indexes + query verification | ✅ |
-| 8+ | Gold queries, AI, demo, full 20M | ⬜ **Next** |
+| 8 | Gold queries (16 reference DSL) | ✅ |
+| 9+ | AI, demo, full 20M | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -141,6 +142,15 @@ docker exec movielens-app python scripts/verify_es_indexes.py
 
 Expected: `18/18 checks passed` — confirms mappings, filters, sorts, and aggregations work.
 
+### 11. Verify gold queries (Stage 8)
+
+```powershell
+docker exec movielens-app python scripts/verify_gold_queries.py
+docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
+```
+
+Expected: `16/16 queries passed`. See `tests/gold_queries/README.md` for Kibana manual testing.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -167,7 +177,13 @@ bigData/
 │   ├── verify_producer.py       # Kafka message verification
 │   ├── run_spark_etl.py         # Stage 6 Spark submit (host)
 │   ├── verify_spark_etl.py      # Spark ETL doc-count check
-│   └── verify_es_indexes.py     # Stage 7 mapping + query checks
+│   ├── verify_es_indexes.py     # Stage 7 mapping + query checks
+│   └── verify_gold_queries.py   # Stage 8 gold query runner
+├── tests/
+│   └── gold_queries/            # Stage 8 reference queries
+│       ├── catalog.yaml
+│       ├── queries.json
+│       └── README.md
 ├── src/
 │   ├── etl/              # Sample ETL pipeline (Stage 4)
 │   ├── producer/         # Kafka producer (Stage 5) ✅

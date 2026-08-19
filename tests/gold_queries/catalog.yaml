@@ -1,0 +1,83 @@
+# Gold query catalog — Stage 8 Step 1
+# Review this file before Step 2 (DSL authoring).
+
+queries:
+  - id: movies_01
+    index: movies
+    category: filter_sort
+    question: Show Comedy movies released after 2000.
+
+  - id: movies_02
+    index: movies
+    category: filter_sort
+    question: What are the 10 highest-rated Comedy movies with at least 100 ratings?
+
+  - id: movies_03
+    index: movies
+    category: filter_sort
+    question: Show movies tagged "pixar" with an average rating above 3.5.
+
+  - id: movies_04
+    index: movies
+    category: filter_sort
+    question: Show Horror movies tagged "funny" sorted by average rating descending.
+
+  - id: movies_05
+    index: movies
+    category: filter_sort
+    question: List Drama movies from the 1990s with at least 50 ratings, sorted by rating count.
+
+  - id: movies_06
+    index: movies
+    category: filter_sort
+    question: Find movies with "Star Wars" in the title and at least 10 ratings.
+
+  - id: movies_07
+    index: movies
+    category: aggregation
+    question: Which genres have the highest average rating? (top 10 genres)
+
+  - id: movies_08
+    index: movies
+    category: aggregation
+    question: Compare the average rating of Action movies vs Comedy movies.
+
+  - id: movies_09
+    index: movies
+    category: aggregation
+    question: How many movies were released each decade?
+
+  - id: movies_10
+    index: movies
+    category: release_year
+    question: What are the 10 highest-rated movies released in 2010 with at least 5 ratings?
+
+  - id: movies_11
+    index: movies
+    category: release_year
+    question: Which release years between 1995 and 2005 have the most movies?
+
+  - id: cohort_01
+    index: movies_by_release_year
+    category: release_year_cohort
+    question: Compare average ratings of movies released in the 1990s vs the 2000s.
+
+  - id: cohort_02
+    index: movies_by_release_year
+    category: release_year_cohort
+    question: Which release years have the highest total rating count? (top 10)
+
+  - id: rating_year_01
+    index: movie_ratings_by_rating_year
+    category: rating_activity
+    question: What were the 10 most popular movies by rating activity in 2010?
+
+  - id: rating_year_02
+    index: movie_ratings_by_rating_year
+    category: rating_activity
+    question: Show how rating activity for Toy Story changed across years.
+
+  - id: rating_year_03
+    index: movie_ratings_by_rating_year
+    category: aggregation
+    question: Which rating years had the most total ratings submitted? (top 5)

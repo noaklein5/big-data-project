@@ -1,0 +1,304 @@
+[
+  {
+    "id": "movies_01",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "Show Comedy movies released after 2000.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"genres": "Comedy"}},
+            {"range": {"release_year": {"gt": 2000}}}
+          ]
+        }
+      },
+      "size": 20,
+      "sort": [{"release_year": "desc"}]
+    }
+  },
+  {
+    "id": "movies_02",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "What are the 10 highest-rated Comedy movies with at least 100 ratings?",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"genres": "Comedy"}},
+            {"range": {"rating_count": {"gte": 100}}}
+          ]
+        }
+      },
+      "size": 10,
+      "sort": [{"average_rating": "desc"}]
+    }
+  },
+  {
+    "id": "movies_03",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "Show movies tagged \"pixar\" with an average rating above 3.5.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"tags": "pixar"}},
+            {"range": {"average_rating": {"gt": 3.5}}}
+          ]
+        }
+      },
+      "size": 20
+    }
+  },
+  {
+    "id": "movies_04",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "Show Horror movies tagged \"funny\" sorted by average rating descending.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"genres": "Horror"}},
+            {"term": {"tags": "funny"}}
+          ]
+        }
+      },
+      "size": 20,
+      "sort": [{"average_rating": "desc"}]
+    }
+  },
+  {
+    "id": "movies_05",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "List Drama movies from the 1990s with at least 50 ratings, sorted by rating count.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"genres": "Drama"}},
+            {"range": {"release_year": {"gte": 1990, "lte": 1999}}},
+            {"range": {"rating_count": {"gte": 50}}}
+          ]
+        }
+      },
+      "size": 20,
+      "sort": [{"rating_count": "desc"}]
+    }
+  },
+  {
+    "id": "movies_06",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "Find movies with \"Star Wars\" in the title and at least 10 ratings.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "must": [{"match": {"title": "Star Wars"}}],
+          "filter": [{"range": {"rating_count": {"gte": 10}}}]
+        }
+      },
+      "size": 20
+    }
+  },
+  {
+    "id": "movies_07",
+    "index": "movies",
+    "category": "aggregation",
+    "question": "Which genres have the highest average rating? (top 10 genres)",
+    "min_agg_buckets": 1,
+    "body": {
+      "size": 0,
+      "aggs": {
+        "genres": {
+          "terms": {
+            "field": "genres",
+            "size": 10,
+            "order": {"avg_rating": "desc"}
+          },
+          "aggs": {
+            "avg_rating": {"avg": {"field": "average_rating"}}
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "movies_08",
+    "index": "movies",
+    "category": "aggregation",
+    "question": "Compare the average rating of Action movies vs Comedy movies.",
+    "body": {
+      "size": 0,
+      "aggs": {
+        "action_avg": {
+          "filter": {"term": {"genres": "Action"}},
+          "aggs": {"avg_rating": {"avg": {"field": "average_rating"}}}
+        },
+        "comedy_avg": {
+          "filter": {"term": {"genres": "Comedy"}},
+          "aggs": {"avg_rating": {"avg": {"field": "average_rating"}}}
+        }
+      }
+    }
+  },
+  {
+    "id": "movies_09",
+    "index": "movies",
+    "category": "aggregation",
+    "question": "How many movies were released each decade?",
+    "min_agg_buckets": 1,
+    "body": {
+      "size": 0,
+      "aggs": {
+        "decades": {
+          "histogram": {
+            "field": "release_year",
+            "interval": 10,
+            "min_doc_count": 1
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "movies_10",
+    "index": "movies",
+    "category": "release_year",
+    "question": "What are the 10 highest-rated movies released in 2010 with at least 5 ratings?",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"release_year": 2010}},
+            {"range": {"rating_count": {"gte": 5}}}
+          ]
+        }
+      },
+      "size": 10,
+      "sort": [{"average_rating": "desc"}]
+    }
+  },
+  {
+    "id": "movies_11",
+    "index": "movies",
+    "category": "release_year",
+    "question": "Which release years between 1995 and 2005 have the most movies?",
+    "min_agg_buckets": 1,
+    "body": {
+      "query": {
+        "range": {"release_year": {"gte": 1995, "lte": 2005}}
+      },
+      "size": 0,
+      "aggs": {
+        "by_year": {
+          "terms": {
+            "field": "release_year",
+            "size": 20,
+            "order": {"_count": "desc"}
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "cohort_01",
+    "index": "movies_by_release_year",
+    "category": "release_year_cohort",
+    "question": "Compare average ratings of movies released in the 1990s vs the 2000s.",
+    "min_agg_buckets": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "should": [
+            {"range": {"release_year": {"gte": 1990, "lte": 1999}}},
+            {"range": {"release_year": {"gte": 2000, "lte": 2009}}}
+          ],
+          "minimum_should_match": 1
+        }
+      },
+      "size": 0,
+      "aggs": {
+        "decades": {
+          "range": {
+            "field": "release_year",
+            "ranges": [
+              {"key": "1990s", "from": 1990, "to": 2000},
+              {"key": "2000s", "from": 2000, "to": 2010}
+            ]
+          },
+          "aggs": {
+            "avg_rating": {"avg": {"field": "average_rating"}}
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "cohort_02",
+    "index": "movies_by_release_year",
+    "category": "release_year_cohort",
+    "question": "Which release years have the highest total rating count? (top 10)",
+    "min_hits": 1,
+    "body": {
+      "size": 10,
+      "sort": [{"total_rating_count": "desc"}]
+    }
+  },
+  {
+    "id": "rating_year_01",
+    "index": "movie_ratings_by_rating_year",
+    "category": "rating_activity",
+    "question": "What were the 10 most popular movies by rating activity in 2010?",
+    "min_hits": 1,
+    "body": {
+      "query": {"term": {"rating_year": 2010}},
+      "size": 10,
+      "sort": [{"rating_count": "desc"}]
+    }
+  },
+  {
+    "id": "rating_year_02",
+    "index": "movie_ratings_by_rating_year",
+    "category": "rating_activity",
+    "question": "Show how rating activity for Toy Story changed across years.",
+    "min_hits": 1,
+    "body": {
+      "query": {"match": {"title": "Toy Story"}},
+      "size": 50,
+      "sort": [{"rating_year": "asc"}]
+    }
+  },
+  {
+    "id": "rating_year_03",
+    "index": "movie_ratings_by_rating_year",
+    "category": "aggregation",
+    "question": "Which rating years had the most total ratings submitted? (top 5)",
+    "min_agg_buckets": 1,
+    "body": {
+      "size": 0,
+      "aggs": {
+        "by_rating_year": {
+          "terms": {
+            "field": "rating_year",
+            "size": 5,
+            "order": {"total_ratings": "desc"}
+          },
+          "aggs": {
+            "total_ratings": {"sum": {"field": "rating_count"}}
+          }
+        }
+      }
+    }
+  }
+]

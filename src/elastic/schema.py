@@ -88,7 +88,7 @@ INDEX_FIELDS: dict[str, dict[str, FieldSpec]] = {
         "movie_id": {
             "type": "integer",
             "roles": ["filter"],
-            "description": "Movie primary key (part of composite document id)",
+            "description": "Movie primary key",
         },
         "title": {
             "type": "text+keyword",
@@ -110,13 +110,18 @@ INDEX_FIELDS: dict[str, dict[str, FieldSpec]] = {
             "roles": ["filter", "sort", "agg"],
             "description": "Average rating for this movie in this year",
         },
+        "movie_rating_year_id": {
+            "type": "keyword",
+            "roles": ["filter"],
+            "description": "Elasticsearch document id ({movie_id}_{rating_year})",
+        },
     },
 }
 
 DOCUMENT_ID_FIELDS: dict[str, str | list[str]] = {
     INDEX_MOVIES: "movie_id",
     INDEX_MOVIES_BY_RELEASE_YEAR: "release_year",
-    INDEX_MOVIE_RATINGS_BY_RATING_YEAR: ["movie_id", "rating_year"],
+    INDEX_MOVIE_RATINGS_BY_RATING_YEAR: "movie_rating_year_id",
 }
 
 INDEX_MAPPINGS: dict[str, dict] = {
@@ -158,6 +163,7 @@ INDEX_MAPPINGS: dict[str, dict] = {
                 "rating_year": {"type": "integer"},
                 "rating_count": {"type": "integer"},
                 "average_rating": {"type": "float"},
+                "movie_rating_year_id": {"type": "keyword"},
             }
         }
     },
@@ -174,7 +180,7 @@ SPARK_WRITE_CONFIG = {
     },
     INDEX_MOVIE_RATINGS_BY_RATING_YEAR: {
         "es.resource": INDEX_MOVIE_RATINGS_BY_RATING_YEAR,
-        "es.mapping.id": "{movie_id}_{rating_year}",
+        "es.mapping.id": "movie_rating_year_id",
     },
 }
 

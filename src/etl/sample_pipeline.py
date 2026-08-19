@@ -177,6 +177,7 @@ def build_rating_year_documents(
             "rating_year": int(row.rating_year),
             "rating_count": int(row.rating_count),
             "average_rating": float(row.average_rating),
+            "movie_rating_year_id": f"{int(row.movie_id)}_{int(row.rating_year)}",
         }
         for row in joined.itertuples(index=False)
     ]
