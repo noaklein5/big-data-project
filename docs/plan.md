@@ -107,10 +107,11 @@ This section is the **complete operator guide** for getting the project running 
 | 9    | Run sample ETL → load Elasticsearch                  |
 | 10   | Stream ratings into Kafka (Stage 5)                  |
 | 11   | Run Spark ETL → Elasticsearch (Stage 6)              |
+| 12   | Verify ES indexes and queries (Stage 7)              |
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–6 are complete when Steps 1–11 pass.
+Stages 0–7 are complete when Steps 1–12 pass.
 
 ## Progress tracker
 
@@ -124,8 +125,8 @@ Stages 0–6 are complete when Steps 1–11 pass.
 | 4     | Small ETL prototype (100k ratings) | ✅ Complete |
 | 5     | Kafka producer                     | ✅ Complete |
 | 6     | Spark ETL pipeline                 | ✅ Complete |
-| 7     | ES mappings + verify Spark output  | ⬜ Next     |
-| 8     | Gold queries                       | ⬜ Pending  |
+| 7     | ES mappings + verify Spark output  | ✅ Complete |
+| 8     | Gold queries                       | ⬜ Next     |
 | 9–11  | AI + validator + Streamlit UI      | ⬜ Pending  |
 | 12    | Kibana dashboards                  | ⬜ Pending  |
 | 13    | Full integration (20M)             | ⬜ Pending  |
@@ -676,6 +677,42 @@ docker exec movielens-app python scripts/verify_spark_etl.py
 
 ---
 
+## Step 12 — Verify Elasticsearch indexes and queries (Stage 7)
+
+Confirms all three indexes exist, mappings match the locked schema, data is loaded, and filters/sorts/aggregations work.
+
+**Prerequisites:** Steps 5–11 complete (indexes created + ETL loaded data).
+
+```powershell
+docker exec movielens-app python scripts/verify_es_indexes.py
+```
+
+### What it checks (18 checks)
+
+1. **Index existence** — all three indexes present
+2. **Mappings** — field names and types match `src/elastic/schema.py`
+3. **Document counts** — non-zero docs in each index
+4. **Filters** — `genres`, `release_year`, `rating_year`, `tags` exact match
+5. **Sorting** — `average_rating`, `movie_count`
+6. **Aggregations** — genre averages, release-year cohorts, rating-year trends
+
+### Expected output
+
+```text
+18/18 checks passed.
+Elasticsearch index verification passed.
+```
+
+### Code locations
+
+| File | Purpose |
+|---|---|
+| `src/elastic/verify_indexes.py` | Verification logic |
+| `src/elastic/setup_indexes.py` | Index creation from locked mappings |
+| `scripts/verify_es_indexes.py` | CLI entry point |
+
+---
+
 ## Useful day-to-day commands
 
 ```bash
@@ -711,6 +748,7 @@ docker exec movielens-app python scripts/verify_producer.py
 # Spark ETL (Stage 6 — run from host)
 python scripts/run_spark_etl.py
 docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-app python scripts/verify_es_indexes.py
 
 # Check ES index counts from host
 curl http://localhost:9200/movies/_count
@@ -820,6 +858,7 @@ docker exec movielens-app python scripts/run_producer.py
 docker exec movielens-app python scripts/verify_producer.py
 python scripts/run_spark_etl.py
 docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-app python scripts/verify_es_indexes.py
 ```
 
 When all steps pass, the full sample pipeline (Kafka → Spark → ES) is working. **Next:** Stage 8 (gold queries) or Stage 9 (AI).
@@ -889,9 +928,10 @@ docker exec movielens-app python scripts/verify_producer.py
 
 # Stage 6 — Spark → Elasticsearch (host Python wrapper)
 python scripts/run_spark_etl.py
-
-# Verify ES indexes
 docker exec movielens-app python scripts/verify_spark_etl.py
+
+# Stage 7 — verify mappings + queries
+docker exec movielens-app python scripts/verify_es_indexes.py
 ```
 
 If `python` is not found on host, try: `py scripts/run_spark_etl.py`
@@ -929,6 +969,7 @@ docker compose logs movielens-kafka
 docker exec movielens-app python scripts/verify_stack.py
 docker exec movielens-app python scripts/verify_producer.py
 docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-app python scripts/verify_es_indexes.py
 docker exec movielens-ollama ollama list
 curl http://localhost:9200/movies/_count
 curl http://localhost:9200/movies_by_release_year/_count
@@ -974,6 +1015,7 @@ python -m venv .venv
 | Sample data loaded     | `verify_sample_etl.py` passes                                  |
 | Ratings in Kafka       | `verify_producer.py` passes                                    |
 | Spark ETL loaded ES    | `verify_spark_etl.py` passes                                   |
+| ES indexes queryable   | `verify_es_indexes.py` passes (18/18 checks)                   |
 | Processed files saved  | `data/processed/sample_*.parquet` exist after Step 9           |
 
 
@@ -1476,7 +1518,7 @@ Aggregate by (movie_id, rating_year) → write to index: movie_ratings_by_rating
 
 Follow **Step 11** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
 
-Pipeline order: `run_producer.py` → `run_spark_etl.py` → `verify_spark_etl.py`
+Pipeline order: `run_producer.py` → `run_spark_etl.py` → `verify_spark_etl.py` → `verify_es_indexes.py`
 
 ### End result
 
@@ -1489,6 +1531,8 @@ Partially. Kafka producer and Spark ETL can be developed by different members af
 ---
 
 ## Stage 7 — Elasticsearch Indexes and Mappings
+
+**Current status:** complete.
 
 Create all three indexes:
 
@@ -1534,13 +1578,21 @@ average_rating   float
 
 ### Tasks
 
-- Define mappings for all three indexes.
-- Create indexes (via `src/elastic/` setup script or Spark write with mapping hints).
-- Load sample data from Stage 4.
-- Verify exact-match filters (`genres`, `tags`, `release_year`, `rating_year`).
-- Verify numeric ranges and sorting.
-- Verify aggregations (genre averages, release-year cohorts, rating-year trends).
-- Verify tag searching.
+- Define mappings for all three indexes. ✅
+- Create indexes (via `src/elastic/setup_indexes.py`). ✅
+- Load sample data from ETL pipeline (Stage 4 / Stage 6). ✅
+- Verify exact-match filters (`genres`, `tags`, `release_year`, `rating_year`). ✅
+- Verify numeric ranges and sorting. ✅
+- Verify aggregations (genre averages, release-year cohorts, rating-year trends). ✅
+- Verify tag searching. ✅
+
+### How to run (completed)
+
+Follow **Step 12** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker exec movielens-app python scripts/verify_es_indexes.py
+```
 
 ### End result
 

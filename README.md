@@ -15,7 +15,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 4 | Sample ETL (100k ratings → ES) | ✅ |
 | 5 | Kafka producer | ✅ |
 | 6 | Spark ETL (Kafka → ES) | ✅ |
-| 7+ | Gold queries, AI, demo, full 20M | ⬜ **Next** |
+| 7 | ES indexes + query verification | ✅ |
+| 8+ | Gold queries, AI, demo, full 20M | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -132,6 +133,14 @@ docker exec movielens-app python scripts/verify_spark_etl.py
 
 **Order matters:** producer first (step 8), then Spark ETL. First Spark run downloads JARs (~1–2 min).
 
+### 10. Verify ES indexes (Stage 7)
+
+```powershell
+docker exec movielens-app python scripts/verify_es_indexes.py
+```
+
+Expected: `18/18 checks passed` — confirms mappings, filters, sorts, and aggregations work.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -157,7 +166,8 @@ bigData/
 │   ├── run_producer.py          # Stage 5 Kafka producer
 │   ├── verify_producer.py       # Kafka message verification
 │   ├── run_spark_etl.py         # Stage 6 Spark submit (host)
-│   └── verify_spark_etl.py      # Spark ETL verification
+│   ├── verify_spark_etl.py      # Spark ETL doc-count check
+│   └── verify_es_indexes.py     # Stage 7 mapping + query checks
 ├── src/
 │   ├── etl/              # Sample ETL pipeline (Stage 4)
 │   ├── producer/         # Kafka producer (Stage 5) ✅
@@ -220,6 +230,7 @@ docker exec movielens-app python scripts/verify_producer.py
 # Spark ETL (from project root on host)
 python scripts/run_spark_etl.py
 docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-app python scripts/verify_es_indexes.py
 
 # Check ES document counts
 curl http://localhost:9200/movies/_count

@@ -22,5 +22,10 @@ def create_indexes(client: Elasticsearch | None = None) -> None:
         print(f"Created index: {index_name}")
 
 
+def ensure_indexes(client: Elasticsearch | None = None) -> None:
+    """Create indexes if missing — safe to call before ETL or verification."""
+    create_indexes(client)
+
+
 if __name__ == "__main__":
     create_indexes()
