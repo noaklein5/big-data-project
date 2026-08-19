@@ -108,6 +108,7 @@ This section is the **complete operator guide** for getting the project running 
 | 10   | Stream ratings into Kafka (Stage 5)                  |
 | 11   | Run Spark ETL → Elasticsearch (Stage 6)              |
 
+**All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
 Stages 0–6 are complete when Steps 1–11 pass.
 
@@ -822,6 +823,141 @@ docker exec movielens-app python scripts/verify_spark_etl.py
 ```
 
 When all steps pass, the full sample pipeline (Kafka → Spark → ES) is working. **Next:** Stage 8 (gold queries) or Stage 9 (AI).
+
+---
+
+## Command cheat sheet — copy/paste restore
+
+Use this section to **restore every manual command** in one place. All commands are run from the project root (`bigData/`) in **Commander or PowerShell** on Windows unless noted.
+
+### Where commands run
+
+
+| You type on | Command pattern | Runs inside |
+|---|---|---|
+| Host terminal | `docker exec movielens-app ...` | `movielens-app` container |
+| Host terminal | `docker exec movielens-ollama ...` | `ollama` container |
+| Host terminal | `python scripts/run_spark_etl.py` | Host script → submits to `movielens-spark-worker` |
+| Host terminal | `docker compose ...` | Docker Desktop (orchestrates containers) |
+| Host terminal | `curl http://localhost:9200/...` | Your machine → Elasticsearch port |
+
+You never need `docker exec -it ... bash` for normal operation.
+
+---
+
+### A — First-time setup (once per machine / after clone)
+
+```powershell
+cd C:\Users\Noa\Desktop\noa\projects\bigData
+copy .env.example .env
+# Download MovieLens 20M → data/raw/ (ratings.csv, movies.csv, tags.csv)
+docker compose up -d --build
+docker compose ps
+docker exec movielens-ollama ollama pull llama3.2:3b
+docker exec movielens-app python scripts/setup_infrastructure.py
+docker exec movielens-app python scripts/verify_stack.py
+docker exec movielens-app python scripts/validate_schema.py
+```
+
+---
+
+### B — Recovery after `docker compose down -v` (wipes all data)
+
+```powershell
+docker compose up -d --build
+docker compose ps
+docker exec movielens-ollama ollama pull llama3.2:3b
+docker exec movielens-app python scripts/setup_infrastructure.py
+docker exec movielens-app python scripts/verify_stack.py
+```
+
+Then re-run the pipeline (section C or D below).
+
+---
+
+### C — Main pipeline: Kafka → Spark → Elasticsearch (Stages 5–6)
+
+**Run in this order.** Do not press Ctrl+C during the producer.
+
+```powershell
+docker compose up -d
+docker compose ps
+
+# Stage 5 — producer → Kafka
+docker exec movielens-app python scripts/run_producer.py
+docker exec movielens-app python scripts/verify_producer.py
+
+# Stage 6 — Spark → Elasticsearch (host Python wrapper)
+python scripts/run_spark_etl.py
+
+# Verify ES indexes
+docker exec movielens-app python scripts/verify_spark_etl.py
+```
+
+If `python` is not found on host, try: `py scripts/run_spark_etl.py`
+
+---
+
+### D — Optional: Stage 4 pandas ETL (legacy / skip if using Spark)
+
+Only needed if you want ES data **without** Kafka + Spark:
+
+```powershell
+docker exec movielens-app python scripts/run_sample_etl.py
+docker exec movielens-app python scripts/verify_sample_etl.py
+```
+
+---
+
+### E — Day-to-day stack control
+
+```powershell
+docker compose up -d
+docker compose ps
+docker compose down
+docker compose down -v
+docker compose up -d --build app
+docker compose logs -f
+docker compose logs movielens-kafka
+```
+
+---
+
+### F — Verify / inspect
+
+```powershell
+docker exec movielens-app python scripts/verify_stack.py
+docker exec movielens-app python scripts/verify_producer.py
+docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-ollama ollama list
+curl http://localhost:9200/movies/_count
+curl http://localhost:9200/movies_by_release_year/_count
+curl http://localhost:9200/movie_ratings_by_rating_year/_count
+```
+
+Browser URLs: ES http://localhost:9200 · Kibana http://localhost:5601 · Spark UI http://localhost:8080
+
+---
+
+### G — Optional flags (quick tests)
+
+```powershell
+docker exec movielens-app python scripts/run_producer.py --sample-size 1000
+docker exec movielens-app python scripts/run_producer.py --full
+docker exec movielens-app python scripts/run_sample_etl.py --sample-size 50000
+docker exec movielens-app python scripts/verify_producer.py --sample-messages 10
+```
+
+---
+
+### H — Local notebook (Stage 1, optional)
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt ipykernel
+.\.venv\Scripts\python -m ipykernel install --user --name=bigdata --display-name="Python (bigData)"
+# Open notebooks/01_data_exploration.ipynb with kernel "Python (bigData)"
+```
 
 ---
 
