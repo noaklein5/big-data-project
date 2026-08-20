@@ -110,10 +110,11 @@ This section is the **complete operator guide** for getting the project running 
 | 12   | Verify ES indexes and queries (Stage 7)              |
 | 13   | Run gold query verification (Stage 8)                |
 | 14   | Run NL query / AI evaluation (Stage 9)               |
+| 15   | Verify query validator (Stage 10)                    |
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–9 are complete when Steps 1–14 pass.
+Stages 0–10 are complete when Steps 1–15 pass.
 
 ## Progress tracker
 
@@ -130,7 +131,8 @@ Stages 0–9 are complete when Steps 1–14 pass.
 | 7     | ES mappings + verify Spark output  | ✅ Complete |
 | 8     | Gold queries                       | ✅ Complete |
 | 9     | AI: NL → Elasticsearch query       | ✅ Complete |
-| 10–11 | Validator + Streamlit UI           | ⬜ Next     |
+| 10    | Query validator                      | ✅ Complete |
+| 11    | Streamlit demo UI                    | ⬜ Next     |
 | 12    | Kibana dashboards                  | ⬜ Pending  |
 | 13    | Full integration (20M)             | ⬜ Pending  |
 | 14–15 | Evaluation + deliverables          | ⬜ Pending  |
@@ -798,6 +800,32 @@ Hits: 3,031  agg_buckets=0
 | `src/ai/generator.py` | Generate + execute queries |
 | `scripts/run_nl_query.py` | CLI for ad-hoc questions |
 | `scripts/evaluate_ai_queries.py` | Gold-question evaluation |
+
+---
+
+## Step 15 — Verify query validator (Stage 10)
+
+Ensures gold queries pass validation and unsafe DSL is rejected before Elasticsearch execution.
+
+```powershell
+docker exec movielens-app python scripts/verify_query_validator.py
+```
+
+### Expected output
+
+```text
+23/23 validator checks passed.
+Query validator verification passed.
+```
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `src/ai/validator.py` | Schema + safety validation |
+| `scripts/verify_query_validator.py` | Gold pass + rejection-case tests |
+
+The validator runs automatically in `generate_query()` and `execute_query()` before any ES call.
 
 ---
 
@@ -1901,6 +1929,8 @@ Yes. Prompt design and gold queries can begin before the full dataset pipeline i
 
 ## Stage 10 — Query Validator
 
+**Current status:** complete.
+
 Never execute LLM output blindly.
 
 ### Validation flow
@@ -1923,14 +1953,22 @@ Execute query
 
 ### Tasks
 
-- Validate JSON syntax.
-- Allow only search/query operations (`query`, `aggs`, `sort`, `size`, `_source`).
-- Reject update/delete/index-management operations.
-- Validate field names against the schema for the target index.
-- Reject queries using `year` — require `release_year` or `rating_year`.
-- Apply result-size limits (e.g. `size` ≤ 100).
-- Return useful errors to the UI.
-- Log rejected queries for testing.
+- Validate JSON syntax. ✅ (parser + validator)
+- Allow only search/query operations (`query`, `aggs`, `sort`, `size`, `_source`). ✅
+- Reject update/delete/index-management operations. ✅
+- Validate field names against the schema for the target index. ✅
+- Reject queries using `year` — require `release_year` or `rating_year`. ✅
+- Apply result-size limits (e.g. `size` ≤ 100). ✅
+- Return useful errors to the UI. ✅
+- Log rejected queries for testing. ✅
+
+### How to run (completed)
+
+Follow **Step 15** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker exec movielens-app python scripts/verify_query_validator.py
+```
 
 ### End result
 

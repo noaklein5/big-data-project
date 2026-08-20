@@ -9,13 +9,16 @@ from src.ai.generator import (
 )
 from src.ai.ollama_client import OllamaError
 from src.ai.parser import ParseError
+from src.ai.validator import ValidationError, validate_query
 
 __all__ = [
     "ExecutionResult",
     "GeneratedQuery",
     "OllamaError",
     "ParseError",
+    "ValidationError",
     "execute_query",
     "generate_and_execute",
     "generate_query",
+    "validate_query",
 ]

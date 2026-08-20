@@ -18,7 +18,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 7 | ES indexes + query verification | ✅ |
 | 8 | Gold queries (16 reference DSL) | ✅ |
 | 9 | NL → ES query (Ollama) | ✅ |
-| 10+ | Validator, demo UI, full 20M | ⬜ **Next** |
+| 10 | Query validator | ✅ |
+| 11+ | Demo UI, full 20M | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -162,6 +163,14 @@ docker exec movielens-app python scripts/evaluate_ai_queries.py
 
 The evaluator runs all 16 gold questions through Ollama (~2–5 min). Requires Ollama model from step 4 and ETL data loaded.
 
+### 13. Verify query validator (Stage 10)
+
+```powershell
+docker exec movielens-app python scripts/verify_query_validator.py
+```
+
+Expected: `23/23 validator checks passed` — gold queries pass; unsafe DSL is rejected.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -191,7 +200,8 @@ bigData/
 │   ├── verify_es_indexes.py     # Stage 7 mapping + query checks
 │   ├── verify_gold_queries.py   # Stage 8 gold query runner
 │   ├── run_nl_query.py          # Stage 9 NL → ES query
-│   └── evaluate_ai_queries.py   # Stage 9 AI evaluation
+│   ├── evaluate_ai_queries.py   # Stage 9 AI evaluation
+│   └── verify_query_validator.py # Stage 10 validator checks
 ├── tests/
 │   └── gold_queries/            # Stage 8 reference queries
 │       ├── catalog.yaml

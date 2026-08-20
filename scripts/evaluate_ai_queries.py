@@ -10,6 +10,7 @@ import time
 from src.ai.generator import execute_query, generate_query
 from src.ai.ollama_client import OllamaError
 from src.ai.parser import ParseError
+from src.ai.validator import ValidationError
 from src.elastic.gold_queries import load_gold_queries
 
 
@@ -24,6 +25,7 @@ def _evaluate_case(case: dict) -> dict:
         "question": question,
         "expected_index": expected_index,
         "parsed": False,
+        "validated": False,
         "index_ok": False,
         "executed": False,
         "results_ok": False,
@@ -35,11 +37,12 @@ def _evaluate_case(case: dict) -> dict:
 
     try:
         generated = generate_query(question)
-    except (OllamaError, ParseError, ValueError) as exc:
+    except (OllamaError, ParseError, ValidationError, ValueError) as exc:
         result["error"] = str(exc)
         return result
 
     result["parsed"] = True
+    result["validated"] = True
     result["index"] = generated.index
     result["index_ok"] = generated.index == expected_index
 

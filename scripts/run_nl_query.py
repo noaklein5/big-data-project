@@ -9,6 +9,7 @@ import sys
 from src.ai.generator import generate_and_execute
 from src.ai.ollama_client import OllamaError
 from src.ai.parser import ParseError
+from src.ai.validator import ValidationError
 
 
 def main() -> int:
@@ -45,7 +46,7 @@ def main() -> int:
 
     try:
         generated, result = generate_and_execute(args.question)
-    except (OllamaError, ParseError, ValueError, RuntimeError) as exc:
+    except (OllamaError, ParseError, ValidationError, ValueError, RuntimeError) as exc:
         print(f"ERROR: {exc}")
         return 1
 
