@@ -122,11 +122,12 @@ This section is the **complete operator guide** for getting the project running 
 | 16   | Open Streamlit demo UI (Stage 11)                    |
 | 17   | Setup Kibana dashboard (Stage 12)                    |
 | 18   | Verify full integration (Stage 13)                   |
+| 19   | Run AI evaluation report (Stage 14)                |
 
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–13 are complete when Steps 1–18 pass.
+Stages 0–14 are complete when Steps 1–19 pass.
 
 ## Progress tracker
 
@@ -147,8 +148,8 @@ Stages 0–13 are complete when Steps 1–18 pass.
 | 11    | Streamlit demo UI                  | ✅ Complete |
 | 12    | Kibana dashboards                  | ✅ Complete |
 | 13    | Full integration (20M)             | ✅ Complete |
-| 14    | AI evaluation                      | ⬜ Next     |
-| 15    | Deliverables + presentation      | ⬜ Pending  |
+| 14    | AI evaluation                      | ✅ Complete |
+| 15    | Deliverables + presentation      | ⬜ Next     |
 
 
 ---
@@ -833,7 +834,7 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_07 -
 ### Expected output
 
 ```text
-16/16 queries passed.
+20/20 queries passed.
 Gold query verification passed.
 ```
 
@@ -1108,6 +1109,56 @@ python scripts/run_full_pipeline.py --full --include-ai      # Ollama smoke test
 | `scripts/run_full_pipeline.py` | Setup → producer → Spark → verify |
 | `scripts/run_spark_etl.py` | `--full` uses 512m driver / 1280m executor |
 | `docker-compose.yml` | Spark worker `SPARK_WORKER_MEMORY: 2G` for full ETL |
+
+---
+
+## Step 19 — AI evaluation (Stage 14)
+
+Evaluate the NL → Elasticsearch AI component on **20 gold questions** and produce submission-ready metrics.
+
+**Prerequisites:** Full or sample ETL loaded, Ollama model pulled, app container running.
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py
+docker exec movielens-app python scripts/verify_ai_evaluation.py
+```
+
+### What it does
+
+1. Sends each of 20 catalog questions to Ollama (`llama3.2:3b` by default)
+2. Parses and validates generated DSL
+3. Executes against Elasticsearch
+4. Scores: valid query, index selection, results vs gold thresholds, semantic correctness
+5. Writes `docs/ai_evaluation.md` and `docs/ai_evaluation_results.json`
+
+### Metrics reported
+
+| Metric | Meaning |
+| --- | --- |
+| Valid query rate | Parsed JSON + passed validator |
+| Index selection accuracy | Chose the expected index |
+| Correct-result rate | Hits / agg buckets meet gold thresholds |
+| Semantic correctness rate | Correct index **and** useful results |
+
+### Optional flags
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py --id movies_02 --show-dsl
+docker exec movielens-app python scripts/run_ai_evaluation.py --min-semantic-rate 0.6
+docker exec movielens-app python scripts/evaluate_ai_queries.py   # console-only summary
+```
+
+**Runtime:** ~3–8 minutes for 20 questions (depends on Ollama speed).
+
+### Files
+
+| File | Purpose |
+| --- | --- |
+| `src/ai/evaluation.py` | Evaluation logic + markdown report |
+| `scripts/run_ai_evaluation.py` | Stage 14 entry point |
+| `scripts/verify_ai_evaluation.py` | Verify report artifacts |
+| `tests/gold_queries/queries.json` | 20 questions + reference DSL |
+| `docs/ai_evaluation.md` | Generated report (do not hand-edit) |
 
 ---
 
@@ -1468,6 +1519,18 @@ python scripts/run_full_pipeline.py --full --skip-producer
 
 ---
 
+### J — AI evaluation (Stage 14)
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py
+docker exec movielens-app python scripts/verify_ai_evaluation.py
+docker exec movielens-app python scripts/run_ai_evaluation.py --id movies_02 --show-dsl
+```
+
+Report: `docs/ai_evaluation.md` · Results: `docs/ai_evaluation_results.json`
+
+---
+
 ### H — Local notebook (Stage 1, optional)
 
 ```powershell
@@ -1495,8 +1558,9 @@ python -m venv .venv
 | Ratings in Kafka       | `verify_producer.py` passes                                    |
 | Spark ETL loaded ES    | `verify_spark_etl.py` passes                                   |
 | ES indexes queryable   | `verify_es_indexes.py` passes (18/18 checks)                   |
-| Gold queries verified  | `verify_gold_queries.py` passes (16/16 queries)                |
+| Gold queries verified  | `verify_gold_queries.py` passes (20/20 queries)               |
 | Full integration (Stage 13) | `verify_integration.py --mode full` passes (7/7 checks)   |
+| AI evaluation (Stage 14) | `run_ai_evaluation.py` + `verify_ai_evaluation.py` pass |
 | Processed files saved  | `data/processed/sample_*.parquet` exist after Step 9           |
 
 
@@ -2227,7 +2291,7 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 
 ### Tasks
 
-- Define 15–20 target natural-language questions covering all categories above. ✅ (16 queries)
+- Define 15–20 target natural-language questions covering all categories above. ✅ (20 queries)
 - Write the correct Elasticsearch DSL manually for each. ✅
 - Specify which index each query targets. ✅
 - Verify each query against Elasticsearch. ✅
@@ -2672,7 +2736,9 @@ No. This is a whole-team synchronization point.
 
 ## Stage 14 — Evaluate the AI Component
 
-Prepare approximately **20 natural-language questions**.
+**Status: complete** — 20-question evaluation set with automated report.
+
+Prepare **20 natural-language questions** (extended from Stage 8 gold catalog).
 
 Suggested categories:
 
@@ -2709,11 +2775,29 @@ Correct-result rate
 Index selection accuracy (correct index chosen)
 ```
 
-Do not invent the final percentages. Report the actual test results.
+Do not invent the final percentages. Report the actual test results from `docs/ai_evaluation.md`.
+
+### Implementation
+
+| File | Purpose |
+| --- | --- |
+| `src/ai/evaluation.py` | Score cases, compute metrics, write report |
+| `scripts/run_ai_evaluation.py` | Run 20 questions → `docs/ai_evaluation.md` |
+| `scripts/verify_ai_evaluation.py` | Verify report + JSON artifacts |
+| `scripts/evaluate_ai_queries.py` | Console-only quick eval |
+| `tests/gold_queries/queries.json` | 20 questions (added `movies_12`–`rating_year_04`) |
+
+### Commands
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py
+docker exec movielens-app python scripts/verify_ai_evaluation.py
+docker exec movielens-app python scripts/run_ai_evaluation.py --id movies_02 --show-dsl
+```
 
 ### End result
 
-Evidence that the AI component was tested, not only demonstrated on cherry-picked examples.
+Evidence that the AI component was tested with measured rates in `docs/ai_evaluation.md`.
 
 ### Parallel work
 

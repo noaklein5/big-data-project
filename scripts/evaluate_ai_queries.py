@@ -1,4 +1,4 @@
-"""Evaluate AI query generation against Stage 8 gold questions."""
+"""Evaluate AI query generation against gold questions (Stage 9/14)."""
 
 from __future__ import annotations
 
@@ -7,57 +7,7 @@ import json
 import sys
 import time
 
-from src.ai.generator import execute_query, generate_query
-from src.ai.ollama_client import OllamaError
-from src.ai.parser import ParseError
-from src.ai.validator import ValidationError
-from src.elastic.gold_queries import load_gold_queries
-
-
-def _evaluate_case(case: dict) -> dict:
-    question = case["question"]
-    expected_index = case["index"]
-    min_hits = case.get("min_hits", 0)
-    min_agg = case.get("min_agg_buckets", 0)
-
-    result = {
-        "id": case["id"],
-        "question": question,
-        "expected_index": expected_index,
-        "parsed": False,
-        "validated": False,
-        "index_ok": False,
-        "executed": False,
-        "results_ok": False,
-        "error": None,
-        "index": None,
-        "hits": 0,
-        "agg_buckets": 0,
-    }
-
-    try:
-        generated = generate_query(question)
-    except (OllamaError, ParseError, ValidationError, ValueError) as exc:
-        result["error"] = str(exc)
-        return result
-
-    result["parsed"] = True
-    result["validated"] = True
-    result["index"] = generated.index
-    result["index_ok"] = generated.index == expected_index
-
-    try:
-        exec_result = execute_query(generated)
-    except Exception as exc:
-        result["error"] = f"Elasticsearch error: {exc}"
-        return result
-
-    result["executed"] = True
-    result["hits"] = exec_result.hits
-    result["agg_buckets"] = exec_result.agg_buckets
-    result["results_ok"] = exec_result.hits >= min_hits and exec_result.agg_buckets >= min_agg
-    result["body"] = generated.body
-    return result
+from src.ai.evaluation import compute_metrics, evaluate_all_cases
 
 
 def main() -> int:
@@ -72,78 +22,65 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    cases = load_gold_queries()
-    if args.id:
-        cases = [case for case in cases if case["id"] == args.id]
-        if not cases:
-            print(f"ERROR: Unknown query id: {args.id}")
-            return 1
-
-    print(f"Evaluating {len(cases)} gold question(s) with Ollama...\n")
-
-    parsed = index_ok = executed = results_ok = 0
+    print(f"Evaluating gold question(s) with Ollama...\n")
     start = time.perf_counter()
 
-    last_outcome: dict | None = None
+    try:
+        outcomes = evaluate_all_cases(query_id=args.id)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 1
 
-    for case in cases:
-        outcome = _evaluate_case(case)
-        last_outcome = outcome
-        if outcome["parsed"]:
-            parsed += 1
-        if outcome["index_ok"]:
-            index_ok += 1
-        if outcome["executed"]:
-            executed += 1
-        if outcome["results_ok"]:
-            results_ok += 1
+    metrics = compute_metrics(outcomes, time.perf_counter() - start)
 
-        if outcome["error"]:
+    for outcome in outcomes:
+        if outcome.error:
             status = "FAIL"
-        elif outcome["results_ok"] and outcome["index_ok"]:
+        elif outcome.semantic_ok:
             status = "OK"
-        elif outcome["executed"]:
+        elif outcome.executed:
             status = "WARN"
         else:
             status = "FAIL"
 
-        print(f"[{status}] {outcome['id']}")
-        print(f"       Q: {outcome['question']}")
-        if outcome["error"]:
-            print(f"       error: {outcome['error']}")
+        print(f"[{status}] {outcome.id}")
+        print(f"       Q: {outcome.question}")
+        if outcome.error:
+            print(f"       error: {outcome.error}")
         else:
-            index_note = "" if outcome["index_ok"] else f" (expected {outcome['expected_index']})"
+            index_note = "" if outcome.index_ok else f" (expected {outcome.expected_index})"
             print(
-                f"       index={outcome['index']}{index_note}  "
-                f"hits={outcome['hits']:,}  agg_buckets={outcome['agg_buckets']}"
+                f"       index={outcome.index}{index_note}  "
+                f"hits={outcome.hits:,}  agg_buckets={outcome.agg_buckets}"
             )
-            if args.show_dsl:
+            if args.show_dsl and outcome.body:
                 print(
                     json.dumps(
-                        {"index": outcome["index"], "body": outcome.get("body", {})},
+                        {"index": outcome.index, "body": outcome.body},
                         indent=2,
                     )
                 )
         print()
 
-    elapsed = time.perf_counter() - start
-    total = len(cases)
     print(
-        f"Summary: parsed={parsed}/{total}  index={index_ok}/{total}  "
-        f"executed={executed}/{total}  results_ok={results_ok}/{total}  "
-        f"({elapsed:.1f}s)"
+        f"Summary: valid={sum(1 for o in outcomes if o.valid_query)}/{metrics.total}  "
+        f"index={sum(1 for o in outcomes if o.index_ok)}/{metrics.total}  "
+        f"results={sum(1 for o in outcomes if o.results_ok)}/{metrics.total}  "
+        f"semantic={sum(1 for o in outcomes if o.semantic_ok)}/{metrics.total}  "
+        f"({metrics.elapsed_seconds:.1f}s)"
     )
 
     if args.id:
-        o = last_outcome or {}
-        return 0 if o.get("results_ok") and o.get("index_ok") and o.get("parsed") else 1
+        o = outcomes[0]
+        return 0 if o.semantic_ok else 1
 
-    min_results = max(1, total // 2)
-    if parsed == total and results_ok >= min_results:
-        print(f"AI evaluation passed ({results_ok}/{total} gold questions returned valid results).")
+    min_results = max(1, metrics.total // 2)
+    semantic_ok_count = sum(1 for o in outcomes if o.semantic_ok)
+    if metrics.valid_query_rate == 1.0 and semantic_ok_count >= min_results:
+        print(f"AI evaluation passed ({semantic_ok_count}/{metrics.total} semantically correct).")
         return 0
 
-    print("AI evaluation incomplete — review failures above.")
+    print("AI evaluation incomplete — run scripts/run_ai_evaluation.py for full Stage 14 report.")
     return 1
 
 

@@ -14,16 +14,16 @@ Manual reference queries for AI evaluation (Stage 8 complete).
 
 ---
 
-## Coverage (16 queries)
+## Coverage (20 queries)
 
 | Category | Index | Count |
 |---|---|---|
-| Filter + sort | `movies` | 6 |
-| Aggregation | `movies` | 3 |
+| Filter + sort | `movies` | 7 |
+| Aggregation | `movies` | 4 |
 | Release year | `movies` | 2 |
-| Release year cohort | `movies_by_release_year` | 2 |
-| Rating activity | `movie_ratings_by_rating_year` | 3 |
-| **Total** | | **16** |
+| Release year cohort | `movies_by_release_year` | 3 |
+| Rating activity | `movie_ratings_by_rating_year` | 4 |
+| **Total** | | **20** |
 
 ---
 
@@ -37,7 +37,7 @@ Manual reference queries for AI evaluation (Stage 8 complete).
 docker exec movielens-app python scripts/verify_gold_queries.py
 ```
 
-Expected: `16/16 queries passed.`
+Expected: `20/20 queries passed.`
 
 ### Run one query and see sample hits
 
@@ -79,6 +79,10 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_07 -
 | `rating_year_01` | Most active movies in 2010 |
 | `rating_year_02` | Toy Story activity over time |
 | `rating_year_03` | Top rating years by volume |
+| `movies_12` | Top 10 movies by rating count |
+| `movies_13` | Animation + disney tag |
+| `cohort_03` | Top 10 release years by movie count |
+| `rating_year_04` | Most active movies in 2005 |
 
 ---
 

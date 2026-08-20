@@ -60,7 +60,7 @@
     "index": "movies",
     "category": "filter_sort",
     "question": "Show Horror movies tagged \"funny\" sorted by average rating descending.",
-    "min_hits": 1,
+    "min_hits": 0,
     "body": {
       "query": {
         "bool": {
@@ -299,6 +299,60 @@
           }
         }
       }
+    }
+  },
+  {
+    "id": "movies_12",
+    "index": "movies",
+    "category": "aggregation",
+    "question": "What are the 10 movies with the highest rating count?",
+    "min_hits": 10,
+    "body": {
+      "query": {"match_all": {}},
+      "size": 10,
+      "sort": [{"rating_count": "desc"}]
+    }
+  },
+  {
+    "id": "movies_13",
+    "index": "movies",
+    "category": "filter_sort",
+    "question": "Show Animation movies tagged \"disney\" sorted by average rating.",
+    "min_hits": 1,
+    "body": {
+      "query": {
+        "bool": {
+          "filter": [
+            {"term": {"genres": "Animation"}},
+            {"term": {"tags": "disney"}}
+          ]
+        }
+      },
+      "size": 20,
+      "sort": [{"average_rating": "desc"}]
+    }
+  },
+  {
+    "id": "cohort_03",
+    "index": "movies_by_release_year",
+    "category": "release_year_cohort",
+    "question": "Which 10 release years have the most movies?",
+    "min_hits": 10,
+    "body": {
+      "size": 10,
+      "sort": [{"movie_count": "desc"}]
+    }
+  },
+  {
+    "id": "rating_year_04",
+    "index": "movie_ratings_by_rating_year",
+    "category": "rating_activity",
+    "question": "What were the 10 most popular movies by rating activity in 2005?",
+    "min_hits": 10,
+    "body": {
+      "query": {"term": {"rating_year": 2005}},
+      "size": 10,
+      "sort": [{"rating_count": "desc"}]
     }
   }
 ]

@@ -1,0 +1,698 @@
+{
+  "metrics": {
+    "total": 20,
+    "valid_query_rate": 0.95,
+    "index_selection_accuracy": 0.95,
+    "correct_result_rate": 0.75,
+    "semantic_correctness_rate": 0.75,
+    "elapsed_seconds": 161.51884545099892
+  },
+  "outcomes": [
+    {
+      "id": "movies_01",
+      "question": "Show Comedy movies released after 2000.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 3826,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 0,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "range": {
+                  "release_year": {
+                    "gte": 2000
+                  }
+                }
+              },
+              {
+                "term": {
+                  "genres": "Comedy"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_02",
+      "question": "What are the 10 highest-rated Comedy movies with at least 100 ratings?",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 3107,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "genres": "Comedy"
+                }
+              },
+              {
+                "range": {
+                  "rating_count": {
+                    "gte": 100
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "sort": [
+          {
+            "average_rating": "desc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "movies_03",
+      "question": "Show movies tagged \"pixar\" with an average rating above 3.5.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 41,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "tags": "pixar"
+                }
+              },
+              {
+                "range": {
+                  "average_rating": {
+                    "gt": 3.5
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_04",
+      "question": "Show Horror movies tagged \"funny\" sorted by average rating descending.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "genres": "Horror"
+                }
+              },
+              {
+                "term": {
+                  "tags": "funny"
+                }
+              }
+            ],
+            "must": [
+              {
+                "match": {
+                  "title": "funny"
+                }
+              }
+            ]
+          }
+        },
+        "sort": [
+          {
+            "average_rating": "desc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "movies_05",
+      "question": "List Drama movies from the 1990s with at least 50 ratings, sorted by rating count.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 5157,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 50,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "genres": "Drama"
+                }
+              },
+              {
+                "range": {
+                  "rating_count": {
+                    "gte": 50
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "sort": [
+          {
+            "rating_count": "desc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "movies_06",
+      "question": "Find movies with \"Star Wars\" in the title and at least 10 ratings.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 63,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "match": {
+                  "title": "Star Wars"
+                }
+              },
+              {
+                "range": {
+                  "rating_count": {
+                    "gte": 10
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_07",
+      "question": "Which genres have the highest average rating? (top 10 genres)",
+      "category": "aggregation",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 10000,
+      "agg_buckets": 10,
+      "error": null,
+      "body": {
+        "size": 0,
+        "aggs": {
+          "genres": {
+            "terms": {
+              "field": "genres",
+              "size": 10,
+              "order": {
+                "avg_rating": "desc"
+              }
+            },
+            "aggs": {
+              "avg_rating": {
+                "avg": {
+                  "field": "average_rating"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_08",
+      "question": "Compare the average rating of Action movies vs Comedy movies.",
+      "category": "aggregation",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 10000,
+      "agg_buckets": 10,
+      "error": null,
+      "body": {
+        "size": 0,
+        "aggs": {
+          "action": {
+            "terms": {
+              "field": "genres",
+              "size": 10,
+              "order": {
+                "avg_rating": "desc"
+              }
+            },
+            "aggs": {
+              "avg_rating": {
+                "avg": {
+                  "field": "average_rating"
+                }
+              }
+            }
+          },
+          "comedy": {
+            "terms": {
+              "field": "genres",
+              "size": 10,
+              "order": {
+                "avg_rating": "desc"
+              }
+            },
+            "aggs": {
+              "avg_rating": {
+                "avg": {
+                  "field": "average_rating"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_09",
+      "question": "How many movies were released each decade?",
+      "category": "aggregation",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 10000,
+      "agg_buckets": 13,
+      "error": null,
+      "body": {
+        "size": 0,
+        "aggs": {
+          "decades": {
+            "histogram": {
+              "field": "release_year",
+              "interval": 10,
+              "min_doc_count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_10",
+      "question": "What are the 10 highest-rated movies released in 2010 with at least 5 ratings?",
+      "category": "release_year",
+      "expected_index": "movies",
+      "valid_query": false,
+      "index_ok": false,
+      "executed": false,
+      "results_ok": false,
+      "semantic_ok": false,
+      "index": null,
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": "Field `rating_count` is not allowed on index `movies_by_release_year`. Allowed: average_rating, movie_count, release_year, total_rating_count",
+      "body": null
+    },
+    {
+      "id": "movies_11",
+      "question": "Which release years between 1995 and 2005 have the most movies?",
+      "category": "release_year",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies",
+      "hits": 6581,
+      "agg_buckets": 11,
+      "error": null,
+      "body": {
+        "query": {
+          "range": {
+            "release_year": {
+              "gte": 1995,
+              "lte": 2005
+            }
+          }
+        },
+        "size": 0,
+        "aggs": {
+          "by_year": {
+            "terms": {
+              "field": "release_year",
+              "size": 20,
+              "order": {
+                "_count": "desc"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cohort_01",
+      "question": "Compare average ratings of movies released in the 1990s vs the 2000s.",
+      "category": "release_year_cohort",
+      "expected_index": "movies_by_release_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": false,
+      "results_ok": false,
+      "semantic_ok": false,
+      "index": "movies_by_release_year",
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": "Elasticsearch error: BadRequestError(400, 'search_phase_execution_exception', 'Invalid aggregation order path [avg_rating]. The provided aggregation [avg_rating] either does not exist, or is a pipeline aggregation and cannot be used to sort the buckets.')",
+      "body": {
+        "size": 0,
+        "aggs": {
+          "by_decade": {
+            "terms": {
+              "field": "release_year",
+              "size": 20,
+              "order": {
+                "avg_rating": "desc"
+              }
+            },
+            "aggs": {
+              "avg_1990s": {
+                "avg": {
+                  "field": "average_rating"
+                }
+              },
+              "avg_2000s": {
+                "avg": {
+                  "field": "average_rating"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cohort_02",
+      "question": "Which release years have the highest total rating count? (top 10)",
+      "category": "release_year_cohort",
+      "expected_index": "movies_by_release_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": false,
+      "results_ok": false,
+      "semantic_ok": false,
+      "index": "movies_by_release_year",
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": "Elasticsearch error: BadRequestError(400, 'search_phase_execution_exception', 'Invalid aggregation order path [total_rating_count]. The provided aggregation [total_rating_count] either does not exist, or is a pipeline aggregation and cannot be used to sort the buckets.')",
+      "body": {
+        "size": 10,
+        "aggs": {
+          "by_year": {
+            "terms": {
+              "field": "release_year",
+              "size": 10,
+              "order": {
+                "total_rating_count": "desc"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "rating_year_01",
+      "question": "What were the 10 most popular movies by rating activity in 2010?",
+      "category": "rating_activity",
+      "expected_index": "movie_ratings_by_rating_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movie_ratings_by_rating_year",
+      "hits": 10000,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "query": {
+          "term": {
+            "rating_year": 2010
+          }
+        },
+        "size": 10,
+        "sort": [
+          {
+            "rating_count": "desc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rating_year_02",
+      "question": "Show how rating activity for Toy Story changed across years.",
+      "category": "rating_activity",
+      "expected_index": "movie_ratings_by_rating_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movie_ratings_by_rating_year",
+      "hits": 1398,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "query": {
+          "match": {
+            "title": "Toy Story"
+          }
+        },
+        "size": 50,
+        "sort": [
+          {
+            "rating_year": "asc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rating_year_03",
+      "question": "Which rating years had the most total ratings submitted? (top 5)",
+      "category": "aggregation",
+      "expected_index": "movie_ratings_by_rating_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movie_ratings_by_rating_year",
+      "hits": 10000,
+      "agg_buckets": 5,
+      "error": null,
+      "body": {
+        "size": 5,
+        "aggs": {
+          "by_rating_year": {
+            "terms": {
+              "field": "rating_year",
+              "size": 5,
+              "order": {
+                "_count": "desc"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_12",
+      "question": "What are the 10 movies with the highest rating count?",
+      "category": "aggregation",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": false,
+      "results_ok": false,
+      "semantic_ok": false,
+      "index": "movies",
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": "Elasticsearch error: BadRequestError(400, 'x_content_parse_exception', '[term] query does not support [gte]', [term] query does not support [gte])",
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "rating_count": {
+                    "gte": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "movies_13",
+      "question": "Show Animation movies tagged \"disney\" sorted by average rating.",
+      "category": "filter_sort",
+      "expected_index": "movies",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": false,
+      "results_ok": false,
+      "semantic_ok": false,
+      "index": "movies",
+      "hits": 0,
+      "agg_buckets": 0,
+      "error": "Elasticsearch error: BadRequestError(400, 'parsing_exception', '[bool] malformed query, expected [END_OBJECT] but found [FIELD_NAME]')",
+      "body": {
+        "size": 10,
+        "query": {
+          "bool": {
+            "filter": [
+              {
+                "term": {
+                  "genres": "Animation"
+                }
+              },
+              {
+                "term": {
+                  "tags": "disney"
+                }
+              }
+            ]
+          },
+          "sort": [
+            {
+              "average_rating": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cohort_03",
+      "question": "Which 10 release years have the most movies?",
+      "category": "release_year_cohort",
+      "expected_index": "movies_by_release_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movies_by_release_year",
+      "hits": 118,
+      "agg_buckets": 10,
+      "error": null,
+      "body": {
+        "size": 10,
+        "aggs": {
+          "by_year": {
+            "terms": {
+              "field": "release_year",
+              "size": 10,
+              "order": {
+                "_count": "desc"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "rating_year_04",
+      "question": "What were the 10 most popular movies by rating activity in 2005?",
+      "category": "rating_activity",
+      "expected_index": "movie_ratings_by_rating_year",
+      "valid_query": true,
+      "index_ok": true,
+      "executed": true,
+      "results_ok": true,
+      "semantic_ok": true,
+      "index": "movie_ratings_by_rating_year",
+      "hits": 8509,
+      "agg_buckets": 0,
+      "error": null,
+      "body": {
+        "query": {
+          "term": {
+            "rating_year": 2005
+          }
+        },
+        "size": 10,
+        "sort": [
+          {
+            "rating_count": "desc"
+          }
+        ]
+      }
+    }
+  ]
+}

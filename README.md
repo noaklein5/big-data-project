@@ -16,13 +16,14 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 5 | Kafka producer | ✅ |
 | 6 | Spark ETL (Kafka → ES) | ✅ |
 | 7 | ES indexes + query verification | ✅ |
-| 8 | Gold queries (16 reference DSL) | ✅ |
+| 8 | Gold queries (20 reference DSL) | ✅ |
 | 9 | NL → ES query (Ollama) | ✅ |
 | 10 | Query validator | ✅ |
 | 11 | Streamlit demo UI | ✅ |
 | 12 | Kibana dashboards | ✅ |
 | 13 | Full integration (sample + 20M) | ✅ |
-| 14+ | AI evaluation, deliverables | ⬜ **Next** |
+| 14 | AI evaluation (20 NL questions) | ✅ |
+| 15 | Deliverables + presentation | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -154,7 +155,7 @@ docker exec movielens-app python scripts/verify_gold_queries.py
 docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
-Expected: `16/16 queries passed`. See `tests/gold_queries/README.md` for Kibana manual testing.
+Expected: `20/20 queries passed`. See `tests/gold_queries/README.md` for Kibana manual testing.
 
 ### 12. Natural language queries (Stage 9)
 
@@ -219,6 +220,23 @@ docker exec movielens-app python scripts/verify_integration.py --mode full
 
 Full mode is slow (~30–90 minutes). For a clean run, reset volumes first: `docker compose down -v`.
 
+### 17. AI evaluation (Stage 14)
+
+Evaluate Ollama on **20 natural-language questions** and generate a report:
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py
+docker exec movielens-app python scripts/verify_ai_evaluation.py
+```
+
+Outputs: `docs/ai_evaluation.md` (metrics + per-question table) and `docs/ai_evaluation_results.json`.
+
+Quick single-question test:
+
+```powershell
+docker exec movielens-app python scripts/run_ai_evaluation.py --id movies_02 --show-dsl
+```
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -253,7 +271,9 @@ bigData/
 │   ├── setup_kibana.py          # Stage 12 Kibana dashboard setup
 │   ├── verify_kibana.py         # Stage 12 Kibana verification
 │   ├── run_full_pipeline.py     # Stage 13 end-to-end pipeline runner
-│   └── verify_integration.py    # Stage 13 integration verification
+│   ├── verify_integration.py    # Stage 13 integration verification
+│   ├── run_ai_evaluation.py     # Stage 14 AI evaluation + report
+│   └── verify_ai_evaluation.py  # Stage 14 report verification
 ├── kibana/
 │   ├── README.md                # Stage 12 dashboard guide
 │   └── insights.md              # Generated data observations

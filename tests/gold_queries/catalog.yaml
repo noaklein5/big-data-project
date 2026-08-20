@@ -81,3 +81,23 @@ queries:
     index: movie_ratings_by_rating_year
     category: aggregation
     question: Which rating years had the most total ratings submitted? (top 5)
+
+  - id: movies_12
+    index: movies
+    category: aggregation
+    question: What are the 10 movies with the highest rating count?
+
+  - id: movies_13
+    index: movies
+    category: filter_sort
+    question: Show Animation movies tagged "disney" sorted by average rating.
+
+  - id: cohort_03
+    index: movies_by_release_year
+    category: release_year_cohort
+    question: Which 10 release years have the most movies?
+
+  - id: rating_year_04
+    index: movie_ratings_by_rating_year
+    category: rating_activity
+    question: What were the 10 most popular movies by rating activity in 2005?
