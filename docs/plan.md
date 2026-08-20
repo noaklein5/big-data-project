@@ -123,11 +123,12 @@ This section is the **complete operator guide** for getting the project running 
 | 17   | Setup Kibana dashboard (Stage 12)                    |
 | 18   | Verify full integration (Stage 13)                   |
 | 19   | Run AI evaluation report (Stage 14)                |
+| 20   | Verify submission deliverables (Stage 15)          |
 
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–14 are complete when Steps 1–19 pass.
+Stages 0–15 are complete when Steps 1–20 pass.
 
 ## Progress tracker
 
@@ -149,7 +150,7 @@ Stages 0–14 are complete when Steps 1–19 pass.
 | 12    | Kibana dashboards                  | ✅ Complete |
 | 13    | Full integration (20M)             | ✅ Complete |
 | 14    | AI evaluation                      | ✅ Complete |
-| 15    | Deliverables + presentation      | ⬜ Next     |
+| 15    | Deliverables + presentation      | ✅ Complete |
 
 
 ---
@@ -1162,6 +1163,42 @@ docker exec movielens-app python scripts/evaluate_ai_queries.py   # console-only
 
 ---
 
+## Step 20 — Submission deliverables (Stage 15)
+
+Final course submission: design document, presentation outline, demo script, and verification.
+
+**Prerequisites:** Stages 0–14 complete (working pipeline + AI evaluation report).
+
+```powershell
+python scripts/verify_deliverables.py
+```
+
+### Deliverable files
+
+| File | Purpose |
+| --- | --- |
+| `docs/design.md` | 1–2 page architecture + data flow + AI + trade-offs |
+| `docs/presentation.md` | 5–10 minute slide outline |
+| `docs/demo_script.md` | Four rehearsed NL demo questions |
+| `docs/ai_evaluation.md` | Measured AI metrics (from Stage 14) |
+| `README.md` | How to run with `docker compose up` |
+| `.env.example` | All configuration variables documented |
+
+### Dataset link
+
+Download [MovieLens 20M](https://grouplens.org/datasets/movielens/20m/) into `data/raw/` (not committed to git).
+
+### Demo questions (rehearse these)
+
+1. `movies_02` — highest-rated Comedy movies with 100+ ratings
+2. `rating_year_01` — most popular movies by rating activity in 2010
+3. `movies_03` — movies tagged "pixar" above 3.5 rating
+4. `movies_08` — Action vs Comedy average rating comparison
+
+See `docs/demo_script.md` for the full walkthrough.
+
+---
+
 ## Useful day-to-day commands
 
 ```bash
@@ -1531,6 +1568,16 @@ Report: `docs/ai_evaluation.md` · Results: `docs/ai_evaluation_results.json`
 
 ---
 
+### K — Submission deliverables (Stage 15)
+
+```powershell
+python scripts/verify_deliverables.py
+```
+
+Files: `docs/design.md` · `docs/presentation.md` · `docs/demo_script.md`
+
+---
+
 ### H — Local notebook (Stage 1, optional)
 
 ```powershell
@@ -1561,6 +1608,7 @@ python -m venv .venv
 | Gold queries verified  | `verify_gold_queries.py` passes (20/20 queries)               |
 | Full integration (Stage 13) | `verify_integration.py --mode full` passes (7/7 checks)   |
 | AI evaluation (Stage 14) | `run_ai_evaluation.py` + `verify_ai_evaluation.py` pass |
+| Submission (Stage 15) | `verify_deliverables.py` passes (8/8 checks) |
 | Processed files saved  | `data/processed/sample_*.parquet` exist after Step 9           |
 
 
@@ -2809,7 +2857,7 @@ Yes. Evaluation questions/results can be divided among team members.
 
 ## Stage 15 — Deliverables and Presentation
 
-
+**Status: complete** — design doc, presentation outline, demo script, and verification.
 
 ### Required deliverables
 
@@ -2866,6 +2914,23 @@ Prepare 3–4 reliable questions in advance:
 ### End result
 
 All submission requirements are complete.
+
+### Implementation
+
+| File | Purpose |
+| --- | --- |
+| `docs/design.md` | 1–2 page design document (architecture, flow, AI, trade-offs) |
+| `docs/presentation.md` | Slide-by-slide outline for 5–10 min talk |
+| `docs/demo_script.md` | Rehearsed demo with 4 reliable NL questions |
+| `scripts/verify_deliverables.py` | Checklist verifier for submission bundle |
+
+### Commands
+
+```powershell
+python scripts/verify_deliverables.py
+```
+
+Open Streamlit for live demo: http://localhost:8501 — follow `docs/demo_script.md`.
 
 ### Parallel work
 

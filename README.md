@@ -23,7 +23,7 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 12 | Kibana dashboards | ✅ |
 | 13 | Full integration (sample + 20M) | ✅ |
 | 14 | AI evaluation (20 NL questions) | ✅ |
-| 15 | Deliverables + presentation | ⬜ **Next** |
+| 15 | Deliverables + presentation | ✅ |
 
 ## Prerequisites
 
@@ -237,6 +237,24 @@ Quick single-question test:
 docker exec movielens-app python scripts/run_ai_evaluation.py --id movies_02 --show-dsl
 ```
 
+### 18. Submission deliverables (Stage 15)
+
+Course submission artifacts:
+
+| Deliverable | Location |
+| --- | --- |
+| Design document (1–2 pages) | [`docs/design.md`](docs/design.md) |
+| Presentation outline (5–10 min) | [`docs/presentation.md`](docs/presentation.md) |
+| Live demo script | [`docs/demo_script.md`](docs/demo_script.md) |
+| AI evaluation report | [`docs/ai_evaluation.md`](docs/ai_evaluation.md) |
+| Dataset | [MovieLens 20M](https://grouplens.org/datasets/movielens/20m/) → `data/raw/` |
+
+Verify all deliverables are present:
+
+```powershell
+python scripts/verify_deliverables.py
+```
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -248,6 +266,10 @@ bigData/
 │   └── processed/        # ETL parquet outputs (sample_*.parquet)
 ├── docs/
 │   ├── plan.md                  # Full setup guide + project plan
+│   ├── design.md                # Stage 15 design document (submission)
+│   ├── presentation.md          # Stage 15 presentation outline
+│   ├── demo_script.md           # Stage 15 live demo script
+│   ├── ai_evaluation.md         # Stage 14 AI evaluation report
 │   ├── schema.md                # Locked data model (Stage 2)
 │   ├── infrastructure.md        # Docker stack details (Stage 3)
 │   └── data_quality_summary.md  # Stage 1 findings
@@ -273,7 +295,8 @@ bigData/
 │   ├── run_full_pipeline.py     # Stage 13 end-to-end pipeline runner
 │   ├── verify_integration.py    # Stage 13 integration verification
 │   ├── run_ai_evaluation.py     # Stage 14 AI evaluation + report
-│   └── verify_ai_evaluation.py  # Stage 14 report verification
+│   ├── verify_ai_evaluation.py  # Stage 14 report verification
+│   └── verify_deliverables.py   # Stage 15 submission checklist
 ├── kibana/
 │   ├── README.md                # Stage 12 dashboard guide
 │   └── insights.md              # Generated data observations
