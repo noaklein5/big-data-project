@@ -109,10 +109,11 @@ This section is the **complete operator guide** for getting the project running 
 | 11   | Run Spark ETL → Elasticsearch (Stage 6)              |
 | 12   | Verify ES indexes and queries (Stage 7)              |
 | 13   | Run gold query verification (Stage 8)                |
+| 14   | Run NL query / AI evaluation (Stage 9)               |
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–8 are complete when Steps 1–13 pass.
+Stages 0–9 are complete when Steps 1–14 pass.
 
 ## Progress tracker
 
@@ -128,7 +129,8 @@ Stages 0–8 are complete when Steps 1–13 pass.
 | 6     | Spark ETL pipeline                 | ✅ Complete |
 | 7     | ES mappings + verify Spark output  | ✅ Complete |
 | 8     | Gold queries                       | ✅ Complete |
-| 9–11  | AI + validator + Streamlit UI      | ⬜ Next     |
+| 9     | AI: NL → Elasticsearch query       | ✅ Complete |
+| 10–11 | Validator + Streamlit UI           | ⬜ Next     |
 | 12    | Kibana dashboards                  | ⬜ Pending  |
 | 13    | Full integration (20M)             | ⬜ Pending  |
 | 14–15 | Evaluation + deliverables          | ⬜ Pending  |
@@ -752,6 +754,50 @@ Gold query verification passed.
 | `scripts/verify_gold_queries.py` | CLI entry point |
 
 See also `tests/gold_queries/README.md` for Kibana manual testing.
+
+---
+
+## Step 14 — Natural language queries (Stage 9)
+
+Generate Elasticsearch DSL from plain English using Ollama (`llama3.2:3b`).
+
+**Prerequisites:** Ollama model pulled (Step 4), ETL data loaded (Steps 10–11).
+
+### Ask one question
+
+```powershell
+docker exec movielens-app python scripts/run_nl_query.py "Show Comedy movies released after 2000." --show-dsl
+docker exec movielens-app python scripts/run_nl_query.py "What are the 10 highest-rated Comedy movies with at least 100 ratings?" --show-hits 3
+```
+
+### Evaluate against gold questions
+
+```powershell
+docker exec movielens-app python scripts/evaluate_ai_queries.py --id movies_01 --show-dsl
+docker exec movielens-app python scripts/evaluate_ai_queries.py
+```
+
+Full evaluation runs all 16 gold questions (~2–5 minutes).
+
+### Expected output (single question)
+
+```text
+Question: Show Comedy movies released after 2000.
+
+Index: movies
+Hits: 3,031  agg_buckets=0
+```
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `src/ai/prompt.py` | System prompt + schema |
+| `src/ai/ollama_client.py` | Ollama HTTP client |
+| `src/ai/parser.py` | JSON / DSL parser |
+| `src/ai/generator.py` | Generate + execute queries |
+| `scripts/run_nl_query.py` | CLI for ad-hoc questions |
+| `scripts/evaluate_ai_queries.py` | Gold-question evaluation |
 
 ---
 
@@ -1739,6 +1785,8 @@ Yes. Can be performed while Spark and Elasticsearch integration are being comple
 
 ## Stage 9 — AI: Natural Language → Elasticsearch Query
 
+**Current status:** complete.
+
 This is the graded AI capability.
 
 ### LLM setup
@@ -1825,12 +1873,21 @@ Index: movie_ratings_by_rating_year
 
 ### Tasks
 
-- Integrate Ollama client in `src/ai/`.
-- Define system prompt with full schema and field semantics.
-- Restrict output to JSON/DSL only.
-- Parse model output (strip markdown fences if present).
-- Handle malformed output gracefully.
-- Test against the Stage 8 gold query set.
+- Integrate Ollama client in `src/ai/`. ✅
+- Define system prompt with full schema and field semantics. ✅
+- Restrict output to JSON/DSL only. ✅
+- Parse model output (strip markdown fences if present). ✅
+- Handle malformed output gracefully. ✅
+- Test against the Stage 8 gold query set. ✅
+
+### How to run (completed)
+
+Follow **Step 14** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker exec movielens-app python scripts/run_nl_query.py "Show Comedy movies released after 2000." --show-dsl
+docker exec movielens-app python scripts/evaluate_ai_queries.py
+```
 
 ### End result
 

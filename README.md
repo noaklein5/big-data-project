@@ -17,7 +17,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 6 | Spark ETL (Kafka → ES) | ✅ |
 | 7 | ES indexes + query verification | ✅ |
 | 8 | Gold queries (16 reference DSL) | ✅ |
-| 9+ | AI, demo, full 20M | ⬜ **Next** |
+| 9 | NL → ES query (Ollama) | ✅ |
+| 10+ | Validator, demo UI, full 20M | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -151,6 +152,16 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 -
 
 Expected: `16/16 queries passed`. See `tests/gold_queries/README.md` for Kibana manual testing.
 
+### 12. Natural language queries (Stage 9)
+
+```powershell
+docker exec movielens-app python scripts/run_nl_query.py "Show Comedy movies released after 2000." --show-dsl
+docker exec movielens-app python scripts/evaluate_ai_queries.py --id movies_01 --show-dsl
+docker exec movielens-app python scripts/evaluate_ai_queries.py
+```
+
+The evaluator runs all 16 gold questions through Ollama (~2–5 min). Requires Ollama model from step 4 and ETL data loaded.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -178,7 +189,9 @@ bigData/
 │   ├── run_spark_etl.py         # Stage 6 Spark submit (host)
 │   ├── verify_spark_etl.py      # Spark ETL doc-count check
 │   ├── verify_es_indexes.py     # Stage 7 mapping + query checks
-│   └── verify_gold_queries.py   # Stage 8 gold query runner
+│   ├── verify_gold_queries.py   # Stage 8 gold query runner
+│   ├── run_nl_query.py          # Stage 9 NL → ES query
+│   └── evaluate_ai_queries.py   # Stage 9 AI evaluation
 ├── tests/
 │   └── gold_queries/            # Stage 8 reference queries
 │       ├── catalog.yaml

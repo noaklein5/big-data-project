@@ -17,7 +17,7 @@ def load_gold_queries(path: Path | None = None) -> list[dict]:
     return json.loads(queries_file.read_text(encoding="utf-8"))
 
 
-def _count_agg_buckets(aggregations: dict | None) -> int:
+def count_agg_buckets(aggregations: dict | None) -> int:
     if not aggregations:
         return 0
     for value in aggregations.values():
@@ -30,7 +30,7 @@ def run_query(client: Elasticsearch, case: dict) -> dict:
     response = client.search(index=case["index"], **case["body"])
     hits = int(response["hits"]["total"]["value"])
     aggregations = response.get("aggregations")
-    agg_buckets = _count_agg_buckets(aggregations)
+    agg_buckets = count_agg_buckets(aggregations)
 
     min_hits = case.get("min_hits", 0)
     min_agg = case.get("min_agg_buckets", 0)
