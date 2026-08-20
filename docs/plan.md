@@ -111,10 +111,11 @@ This section is the **complete operator guide** for getting the project running 
 | 13   | Run gold query verification (Stage 8)                |
 | 14   | Run NL query / AI evaluation (Stage 9)               |
 | 15   | Verify query validator (Stage 10)                    |
+| 16   | Open Streamlit demo UI (Stage 11)                    |
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–10 are complete when Steps 1–15 pass.
+Stages 0–11 are complete when Steps 1–16 pass.
 
 ## Progress tracker
 
@@ -132,8 +133,8 @@ Stages 0–10 are complete when Steps 1–15 pass.
 | 8     | Gold queries                       | ✅ Complete |
 | 9     | AI: NL → Elasticsearch query       | ✅ Complete |
 | 10    | Query validator                      | ✅ Complete |
-| 11    | Streamlit demo UI                    | ⬜ Next     |
-| 12    | Kibana dashboards                  | ⬜ Pending  |
+| 11    | Streamlit demo UI                    | ✅ Complete |
+| 12    | Kibana dashboards                  | ⬜ Next     |
 | 13    | Full integration (20M)             | ⬜ Pending  |
 | 14–15 | Evaluation + deliverables          | ⬜ Pending  |
 
@@ -826,6 +827,35 @@ Query validator verification passed.
 | `scripts/verify_query_validator.py` | Gold pass + rejection-case tests |
 
 The validator runs automatically in `generate_query()` and `execute_query()` before any ES call.
+
+---
+
+## Step 16 — Streamlit demo UI (Stage 11)
+
+Open the natural-language search interface at **http://localhost:8501**.
+
+**Prerequisites:** Stack running, Ollama model pulled, ETL data loaded (Steps 10–11).
+
+```powershell
+docker compose up -d --build app
+```
+
+Then open http://localhost:8501 in your browser.
+
+### What the UI shows
+
+1. Your question
+2. Target Elasticsearch index
+3. Validated generated DSL
+4. Result table (hits) or aggregation JSON
+5. Optional AI summary (sidebar checkbox; labeled as LLM-generated)
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `src/app/streamlit_app.py` | Streamlit UI |
+| `Dockerfile` | Starts Streamlit on port 8501 |
 
 ---
 
@@ -1982,6 +2012,8 @@ Yes. Can be developed in parallel with Stage 9.
 
 ## Stage 11 — Demo Application
 
+**Current status:** complete.
+
 Keep the interface simple. Runs locally in the **app** Docker container (Streamlit).
 
 ### Proposed UI
@@ -2008,12 +2040,22 @@ Keep the interface simple. Runs locally in the **app** Docker container (Streaml
 
 ### Tasks
 
-- Build Streamlit UI in `src/app/`.
-- Connect to Ollama and Elasticsearch over the Docker network.
-- Show generated DSL before execution.
-- Execute validated query.
-- Display results clearly (table for hits, JSON for aggregations).
-- Handle errors (LLM failure, invalid query, ES timeout).
+- Build Streamlit UI in `src/app/`. ✅
+- Connect to Ollama and Elasticsearch over the Docker network. ✅
+- Show generated DSL before execution. ✅
+- Execute validated query. ✅
+- Display results clearly (table for hits, JSON for aggregations). ✅
+- Handle errors (LLM failure, invalid query, ES timeout). ✅
+
+### How to run (completed)
+
+Follow **Step 16** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker compose up -d --build app
+```
+
+Open http://localhost:8501
 
 ### End result
 

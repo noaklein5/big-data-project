@@ -19,7 +19,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 8 | Gold queries (16 reference DSL) | ✅ |
 | 9 | NL → ES query (Ollama) | ✅ |
 | 10 | Query validator | ✅ |
-| 11+ | Demo UI, full 20M | ⬜ **Next** |
+| 11 | Streamlit demo UI | ✅ |
+| 12+ | Kibana, full 20M | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -171,6 +172,16 @@ docker exec movielens-app python scripts/verify_query_validator.py
 
 Expected: `23/23 validator checks passed` — gold queries pass; unsafe DSL is rejected.
 
+### 14. Demo UI (Stage 11)
+
+Open **http://localhost:8501** after the stack is up and ETL data is loaded.
+
+```powershell
+docker compose up -d --build app
+```
+
+Type a question (or pick an example from the sidebar) and click **Search**. The app shows the validated Elasticsearch query and results.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -214,6 +225,7 @@ bigData/
 │   ├── elastic/          # Schema + index setup
 │   ├── ai/               # NL → Elasticsearch query (Stage 9)
 │   ├── app/              # Streamlit demo (Stage 11)
+│   │   └── streamlit_app.py
 │   └── config.py         # Shared configuration
 ├── docker-compose.yml
 ├── Dockerfile

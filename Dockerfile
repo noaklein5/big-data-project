@@ -12,5 +12,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src ./src
 COPY scripts ./scripts
 
-# Default: keep container running until Streamlit app is implemented
-CMD ["sleep", "infinity"]
+# Default: Streamlit demo (Stage 11)
+CMD ["streamlit", "run", "src/app/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0", "--browser.gatherUsageStats=false"]

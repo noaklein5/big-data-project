@@ -20,19 +20,21 @@ def chat(
     model: str | None = None,
     base_url: str | None = None,
     timeout: httpx.Timeout | None = None,
+    json_format: bool = True,
 ) -> str:
     """Send a chat request and return the assistant message content."""
     url = f"{(base_url or OLLAMA_URL).rstrip('/')}/api/chat"
-    payload = {
+    payload: dict = {
         "model": model or OLLAMA_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
         "stream": False,
-        "format": "json",
         "options": {"temperature": 0},
     }
+    if json_format:
+        payload["format"] = "json"
 
     try:
         response = httpx.post(url, json=payload, timeout=timeout or DEFAULT_TIMEOUT)
