@@ -127,6 +127,7 @@ DOCUMENT_ID_FIELDS: dict[str, str | list[str]] = {
 INDEX_MAPPINGS: dict[str, dict] = {
     INDEX_MOVIES: {
         "mappings": {
+            "dynamic": "strict",
             "properties": {
                 "movie_id": {"type": "integer"},
                 "title": {
@@ -144,6 +145,7 @@ INDEX_MAPPINGS: dict[str, dict] = {
     },
     INDEX_MOVIES_BY_RELEASE_YEAR: {
         "mappings": {
+            "dynamic": "strict",
             "properties": {
                 "release_year": {"type": "integer"},
                 "movie_count": {"type": "integer"},
@@ -154,6 +156,7 @@ INDEX_MAPPINGS: dict[str, dict] = {
     },
     INDEX_MOVIE_RATINGS_BY_RATING_YEAR: {
         "mappings": {
+            "dynamic": "strict",
             "properties": {
                 "movie_id": {"type": "integer"},
                 "title": {

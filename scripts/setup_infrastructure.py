@@ -142,7 +142,7 @@ def main() -> int:
     ]
 
     try:
-        create_indexes()
+        create_indexes(recreate_on_mismatch=True)
         print("Elasticsearch indexes: OK")
     except Exception as exc:
         print(f"Elasticsearch indexes: FAIL ({exc})")

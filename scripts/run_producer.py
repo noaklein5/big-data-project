@@ -32,6 +32,7 @@ def main() -> int:
     try:
         stats = stream_ratings_to_kafka(
             sample_size=None if args.full else args.sample_size,
+            full=args.full,
             progress_every=args.progress_every,
         )
     except FileNotFoundError as exc:

@@ -21,7 +21,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 10 | Query validator | ✅ |
 | 11 | Streamlit demo UI | ✅ |
 | 12 | Kibana dashboards | ✅ |
-| 13+ | Full 20M, evaluation | ⬜ **Next** |
+| 13 | Full integration (sample + 20M) | ✅ |
+| 14+ | AI evaluation, deliverables | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -192,6 +193,32 @@ docker exec movielens-app python scripts/verify_kibana.py
 
 Open http://localhost:5601 → **Dashboards** → **MovieLens Analytics**. See `kibana/insights.md` for data observations.
 
+### 16. Full integration (Stage 13)
+
+Verify the complete pipeline end-to-end (Kafka → Spark → Elasticsearch → gold queries):
+
+```powershell
+docker exec movielens-app python scripts/verify_integration.py
+docker exec movielens-app python scripts/verify_integration.py --include-ai
+```
+
+Run the full pipeline in one command (sample mode by default):
+
+```powershell
+python scripts/run_full_pipeline.py
+```
+
+For the **full 20M dataset**, set `DATA_MODE=full` in `.env` or use `--full`:
+
+```powershell
+python scripts/run_full_pipeline.py --full
+python scripts/run_spark_etl.py --full
+docker exec movielens-app python scripts/run_producer.py --full
+docker exec movielens-app python scripts/verify_integration.py --mode full
+```
+
+Full mode is slow (~30–90 minutes). For a clean run, reset volumes first: `docker compose down -v`.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -224,7 +251,9 @@ bigData/
 │   ├── evaluate_ai_queries.py   # Stage 9 AI evaluation
 │   ├── verify_query_validator.py # Stage 10 validator checks
 │   ├── setup_kibana.py          # Stage 12 Kibana dashboard setup
-│   └── verify_kibana.py         # Stage 12 Kibana verification
+│   ├── verify_kibana.py         # Stage 12 Kibana verification
+│   ├── run_full_pipeline.py     # Stage 13 end-to-end pipeline runner
+│   └── verify_integration.py    # Stage 13 integration verification
 ├── kibana/
 │   ├── README.md                # Stage 12 dashboard guide
 │   └── insights.md              # Generated data observations
@@ -242,6 +271,7 @@ bigData/
 │   ├── app/              # Streamlit demo (Stage 11)
 │   │   └── streamlit_app.py
 │   ├── kibana/           # Kibana dashboard setup (Stage 12)
+│   ├── integration/      # End-to-end pipeline checks (Stage 13)
 │   └── config.py         # Shared configuration
 ├── docker-compose.yml
 ├── Dockerfile
@@ -259,6 +289,8 @@ Copy `.env.example` to `.env`. Use **Docker internal hostnames** (`kafka`, `elas
 | `SAMPLE_RATINGS` | `100000` | Ratings to process in sample mode |
 | `OLLAMA_MODEL` | `llama3.2:3b` | Ollama model for query generation |
 | `KAFKA_TOPIC_RAW_RATINGS` | `raw_ratings` | Ratings stream topic |
+
+**Sample vs full:** In sample mode the producer sends `SAMPLE_RATINGS` rows (default 100k). In full mode (`DATA_MODE=full` or `--full` flags) all ~20M ratings are processed. Use `verify_integration.py --mode auto` to validate thresholds against loaded data.
 
 ## Elasticsearch indexes
 

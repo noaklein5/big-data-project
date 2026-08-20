@@ -121,11 +121,12 @@ This section is the **complete operator guide** for getting the project running 
 | 15   | Verify query validator (Stage 10)                    |
 | 16   | Open Streamlit demo UI (Stage 11)                    |
 | 17   | Setup Kibana dashboard (Stage 12)                    |
+| 18   | Verify full integration (Stage 13)                   |
 
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–12 are complete when Steps 1–17 pass.
+Stages 0–13 are complete when Steps 1–18 pass.
 
 ## Progress tracker
 
@@ -145,8 +146,9 @@ Stages 0–12 are complete when Steps 1–17 pass.
 | 10    | Query validator                    | ✅ Complete |
 | 11    | Streamlit demo UI                  | ✅ Complete |
 | 12    | Kibana dashboards                  | ✅ Complete |
-| 13    | Full integration (20M)             | ⬜ Next     |
-| 14–15 | Evaluation + deliverables          | ⬜ Pending  |
+| 13    | Full integration (20M)             | ✅ Complete |
+| 14    | AI evaluation                      | ⬜ Next     |
+| 15    | Deliverables + presentation      | ⬜ Pending  |
 
 
 ---
@@ -990,6 +992,125 @@ Insights document: `kibana/insights.md` (regenerated on each setup run).
 
 ---
 
+## Step 18 — Full integration (Stage 13)
+
+Connect and verify the complete pipeline: Kafka → Spark → Elasticsearch → gold queries → optional AI smoke test.
+
+**Prerequisites:** MovieLens CSV files in `data/raw/`, Docker stack running, Ollama model pulled.
+
+### Verify integration (after pipeline loaded)
+
+```powershell
+docker exec movielens-app python scripts/verify_integration.py
+docker exec movielens-app python scripts/verify_integration.py --mode sample
+docker exec movielens-app python scripts/verify_integration.py --mode full
+docker exec movielens-app python scripts/verify_integration.py --include-ai
+```
+
+Checks:
+
+1. Kafka topic has enough messages for the selected mode
+2. All three ES indexes meet minimum document counts
+3. Stage 7 mapping/query checks pass (18 checks)
+4. All 16 gold queries pass
+5. Optional: one Ollama smoke-test question
+
+**Expected output (full 20M — verified):** `7/7 integration checks passed`
+
+| Metric | Expected (full 20M) |
+| --- | --- |
+| Kafka messages | ~20,000,263 |
+| `movies` docs | ~26,744 |
+| `movies_by_release_year` docs | ~118 |
+| `movie_ratings_by_rating_year` docs | ~178,385 (aggregated movie+year pairs, not 20M raw ratings) |
+
+### Sample pipeline (100k) — one command
+
+```powershell
+python scripts/run_full_pipeline.py
+```
+
+Runs: infrastructure setup → producer (100k) → Spark ETL → verify integration.
+
+### Full 20M dataset — recommended (one command)
+
+**Use `--full` on the pipeline script** (works even when `.env` has `DATA_MODE=sample`):
+
+```powershell
+python scripts/run_full_pipeline.py --full
+```
+
+Runs automatically:
+
+1. `setup_infrastructure.py` — Kafka topic + ES indexes (recreates indexes if mapping wrong)
+2. `run_producer.py --full` — all ~20M ratings to Kafka (~15–20 min)
+3. `run_spark_etl.py --full` — Spark ETL with 512m/1280m memory (~15–25 min)
+4. `verify_integration.py --mode full`
+
+**Do not press Ctrl+C** during producer or Spark. If interrupted, see recovery below.
+
+### Full 20M — clean start (required after failed/partial runs)
+
+Re-run producer on a non-empty Kafka topic creates duplicates. Reset volumes first:
+
+```powershell
+cd C:\Users\Noa\Desktop\noa\projects\bigData
+docker compose down -v
+docker compose up -d
+docker compose ps
+docker exec movielens-ollama ollama pull llama3.2:3b
+python scripts/run_full_pipeline.py --full
+```
+
+(`run_full_pipeline.py --full` includes infrastructure setup — no need to run `setup_infrastructure.py` separately.)
+
+### Full 20M — manual steps (same result, more control)
+
+```powershell
+docker exec movielens-app python scripts/setup_infrastructure.py
+docker exec movielens-app python scripts/run_producer.py --full
+docker exec movielens-app python scripts/verify_producer.py
+python scripts/run_spark_etl.py --full
+docker exec movielens-app python scripts/verify_spark_etl.py
+docker exec movielens-app python scripts/verify_integration.py --mode full
+```
+
+### Resume after Ctrl+C (Kafka data already loaded)
+
+Do **not** re-run the producer. Spark upserts into ES — safe to retry:
+
+```powershell
+python scripts/run_full_pipeline.py --full --skip-producer
+```
+
+Or Spark only:
+
+```powershell
+python scripts/run_spark_etl.py --full
+docker exec movielens-app python scripts/verify_integration.py --mode full
+```
+
+### Optional flags
+
+```powershell
+python scripts/run_full_pipeline.py --full --skip-setup      # indexes already exist
+python scripts/run_full_pipeline.py --full --skip-producer   # reuse Kafka data
+python scripts/run_full_pipeline.py --full --include-ai      # Ollama smoke test at end
+```
+
+### Files
+
+| File | Purpose |
+| --- | --- |
+| `src/integration/expectations.py` | Sample/full thresholds |
+| `src/integration/verify.py` | Integration check orchestrator |
+| `scripts/verify_integration.py` | CLI verification |
+| `scripts/run_full_pipeline.py` | Setup → producer → Spark → verify |
+| `scripts/run_spark_etl.py` | `--full` uses 512m driver / 1280m executor |
+| `docker-compose.yml` | Spark worker `SPARK_WORKER_MEMORY: 2G` for full ETL |
+
+---
+
 ## Useful day-to-day commands
 
 ```bash
@@ -1313,6 +1434,40 @@ docker exec movielens-app python scripts/verify_producer.py --sample-messages 10
 
 
 
+### I — Full integration (Stage 13)
+
+**Sample (100k):**
+
+```powershell
+python scripts/run_full_pipeline.py
+docker exec movielens-app python scripts/verify_integration.py --mode sample
+```
+
+**Full 20M (clean start — run from project root):**
+
+```powershell
+docker compose down -v
+docker compose up -d
+docker exec movielens-ollama ollama pull llama3.2:3b
+python scripts/run_full_pipeline.py --full
+```
+
+**Verify only (after pipeline finished):**
+
+```powershell
+docker exec movielens-app python scripts/verify_integration.py --mode full
+```
+
+Expected: `7/7 integration checks passed` · Kafka ~20M · movies ~26,744 · rating_year ~178,385
+
+**Resume Spark only (producer already done — do not re-run producer):**
+
+```powershell
+python scripts/run_full_pipeline.py --full --skip-producer
+```
+
+---
+
 ### H — Local notebook (Stage 1, optional)
 
 ```powershell
@@ -1341,6 +1496,7 @@ python -m venv .venv
 | Spark ETL loaded ES    | `verify_spark_etl.py` passes                                   |
 | ES indexes queryable   | `verify_es_indexes.py` passes (18/18 checks)                   |
 | Gold queries verified  | `verify_gold_queries.py` passes (16/16 queries)                |
+| Full integration (Stage 13) | `verify_integration.py --mode full` passes (7/7 checks)   |
 | Processed files saved  | `data/processed/sample_*.parquet` exist after Step 9           |
 
 
@@ -2410,23 +2566,69 @@ Yes. Fully parallel with the demo/UI work.
 
 ## Stage 13 — Full Integration
 
-Stop working independently and connect everything.
+Stop working independently and connect everything. **Status: complete** (full 20M verified).
 
 ### End-to-end flow
 
 ```text
 docker compose up
         ↓
-Kafka + Spark + Elasticsearch + Ollama + App
+setup_infrastructure.py (indexes + Kafka topic)
         ↓
-Producer (sample or full mode)
+Producer (--full or sample)
         ↓
-Spark ETL → direct write to Elasticsearch
+Spark ETL (--full for 20M) → Elasticsearch
         ↓
-Streamlit App
+verify_integration.py → 7/7 checks
+        ↓
+Streamlit App + Kibana
 ```
 
+### Implementation
 
+| File | Purpose |
+| --- | --- |
+| `src/integration/expectations.py` | Sample/full thresholds for Kafka and ES counts |
+| `src/integration/verify.py` | End-to-end verification orchestrator |
+| `scripts/verify_integration.py` | CLI: verify loaded pipeline |
+| `scripts/run_full_pipeline.py` | Setup → producer → Spark → verify |
+| `scripts/run_spark_etl.py` | `--full` flag (512m driver / 1280m executor) |
+| `src/producer/ratings_producer.py` | `--full` sends all rows (ignores `DATA_MODE=sample`) |
+| `docker-compose.yml` | Spark worker memory 2G for full ETL |
+
+### Commands (verified on full 20M)
+
+**One command (recommended):**
+
+```powershell
+# Clean start
+docker compose down -v && docker compose up -d
+docker exec movielens-ollama ollama pull llama3.2:3b
+python scripts/run_full_pipeline.py --full
+```
+
+**Verify after load:**
+
+```powershell
+docker exec movielens-app python scripts/verify_integration.py --mode full
+```
+
+**Sample mode:**
+
+```powershell
+python scripts/run_full_pipeline.py
+docker exec movielens-app python scripts/verify_integration.py --mode sample
+```
+
+### Expected results (full 20M)
+
+| Step | Expected output |
+| --- | --- |
+| Producer | `mode=full`, `Finished: 20,000,263 messages` (~18 min) |
+| Spark ETL | `valid ratings: 20,000,263`, `movies=26,744`, `rating_year=178,385` (~15 min) |
+| Integration | `7/7 integration checks passed` |
+
+Note: `movie_ratings_by_rating_year` has ~178k docs (one per movie+year), not 20M.
 
 ### Test AI flow
 
@@ -2444,23 +2646,21 @@ Elasticsearch
 Real Results
 ```
 
-
+Use `--include-ai` on `verify_integration.py` for a smoke test, or run `evaluate_ai_queries.py` for full Stage 14 evaluation.
 
 ### Tasks
 
-- Run the complete stack on one laptop.
-- Test pipeline from raw data through all three ES indexes.
-- Switch from sample to **full 20M dataset**.
-- Test all AI components against the final indexes.
-- Fix schema mismatches between Spark output and ES mappings.
-- Test restart behavior (`docker compose down && docker compose up`).
-- Document startup order and sample/full mode in `README.md`.
-
-
+- Run the complete stack on one laptop. ✅
+- Test pipeline from raw data through all three ES indexes. ✅
+- Switch from sample to **full 20M dataset** (`DATA_MODE=full` / `--full`). ✅
+- Test all AI components against the final indexes (smoke test + existing eval script). ✅
+- Fix schema mismatches between Spark output and ES mappings. ✅ (Stage 7)
+- Test restart behavior (`docker compose down && docker compose up`). ✅ (documented)
+- Document startup order and sample/full mode in `README.md`. ✅
 
 ### End result
 
-A complete working system running locally.
+A complete working system running locally with automated integration verification.
 
 ### Parallel work
 

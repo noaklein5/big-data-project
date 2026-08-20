@@ -35,7 +35,9 @@ def _ratings_path() -> Path:
     return path
 
 
-def _resolve_limit(sample_size: int | None) -> int | None:
+def _resolve_limit(sample_size: int | None, *, full: bool = False) -> int | None:
+    if full:
+        return None
     if sample_size is not None:
         return sample_size
     if DATA_MODE == "sample":
@@ -46,9 +48,10 @@ def _resolve_limit(sample_size: int | None) -> int | None:
 def stream_ratings_to_kafka(
     *,
     sample_size: int | None = None,
+    full: bool = False,
     progress_every: int = 10000,
 ) -> ProducerStats:
-    limit = _resolve_limit(sample_size)
+    limit = _resolve_limit(sample_size, full=full)
     path = _ratings_path()
     mode = "sample" if limit is not None else "full"
 
@@ -70,7 +73,10 @@ def stream_ratings_to_kafka(
         f"Streaming ratings from {path} to topic `{KAFKA_TOPIC_RAW_RATINGS}` "
         f"(mode={mode}, limit={limit or 'all'})"
     )
-    print("Do not press Ctrl+C — interrupting leaves a partial topic. Estimated ~2–3 min for 100k.")
+    if mode == "full":
+        print("Do not press Ctrl+C — full mode may take 15–30 minutes for ~20M ratings.")
+    else:
+        print("Do not press Ctrl+C — interrupting leaves a partial topic. Estimated ~2–3 min for 100k.")
 
     def flush_pending() -> None:
         nonlocal pending

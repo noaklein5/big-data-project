@@ -95,7 +95,8 @@ services:
     container_name: movielens-spark-worker
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
     environment:
-      SPARK_WORKER_MEMORY: 1G
+      # Must exceed executor-memory in run_spark_etl.py --full (1280m + overhead)
+      SPARK_WORKER_MEMORY: 2G
       SPARK_WORKER_CORES: 2
       HOME: /tmp
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -110,7 +111,7 @@ services:
       - ./data/raw:/data/raw:ro
       - ./data/processed:/data/processed
       - ./src/spark:/opt/spark-jobs
-    mem_limit: 1536m
+    mem_limit: 3584m
     restart: unless-stopped
 
   ollama:
