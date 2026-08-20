@@ -25,6 +25,8 @@ The LLM generates the query, but the final answer is based on real results retur
 
 ---
 
+
+
 ## Project Constraints
 
 
@@ -40,6 +42,8 @@ The LLM generates the query, but the final answer is based on real results retur
 | Spark output     | Spark writes **directly** to Elasticsearch (elasticsearch-spark connector) |
 
 
+
+
 ### Semi-structured / unstructured data (course requirement)
 
 MovieLens is mostly CSV, but the project satisfies the course requirement through:
@@ -51,6 +55,8 @@ MovieLens is mostly CSV, but the project satisfies the course requirement throug
 Document this explicitly in the design doc.
 
 ---
+
+
 
 # Overall Architecture
 
@@ -89,6 +95,8 @@ All services run locally in Docker. Raw data is volume-mounted from `./data/raw`
 
 ---
 
+
+
 # Full Setup and Run Instructions
 
 This section is the **complete operator guide** for getting the project running on a laptop. Follow steps in order.
@@ -112,10 +120,12 @@ This section is the **complete operator guide** for getting the project running 
 | 14   | Run NL query / AI evaluation (Stage 9)               |
 | 15   | Verify query validator (Stage 10)                    |
 | 16   | Open Streamlit demo UI (Stage 11)                    |
+| 17   | Setup Kibana dashboard (Stage 12)                    |
+
 
 **All copy-paste commands in one place:** [Command cheat sheet — copy/paste restore](#command-cheat-sheet--copypaste-restore)
 
-Stages 0–11 are complete when Steps 1–16 pass.
+Stages 0–12 are complete when Steps 1–17 pass.
 
 ## Progress tracker
 
@@ -132,14 +142,16 @@ Stages 0–11 are complete when Steps 1–16 pass.
 | 7     | ES mappings + verify Spark output  | ✅ Complete |
 | 8     | Gold queries                       | ✅ Complete |
 | 9     | AI: NL → Elasticsearch query       | ✅ Complete |
-| 10    | Query validator                      | ✅ Complete |
-| 11    | Streamlit demo UI                    | ✅ Complete |
-| 12    | Kibana dashboards                  | ⬜ Next     |
-| 13    | Full integration (20M)             | ⬜ Pending  |
+| 10    | Query validator                    | ✅ Complete |
+| 11    | Streamlit demo UI                  | ✅ Complete |
+| 12    | Kibana dashboards                  | ✅ Complete |
+| 13    | Full integration (20M)             | ⬜ Next     |
 | 14–15 | Evaluation + deliverables          | ⬜ Pending  |
 
 
 ---
+
+
 
 ## Prerequisites
 
@@ -154,6 +166,8 @@ Stages 0–11 are complete when Steps 1–16 pass.
 
 
 ---
+
+
 
 ## Step 1 — Clone and configure environment
 
@@ -170,6 +184,8 @@ git clone <repository-url>
 cd bigData
 copy .env.example .env
 ```
+
+
 
 ### `.env` variables (do not change hostnames)
 
@@ -193,6 +209,8 @@ These URLs use **Docker internal hostnames** (`kafka`, `elasticsearch`, etc.). T
 
 
 ---
+
+
 
 ## Step 2 — Download MovieLens 20M
 
@@ -221,6 +239,8 @@ These files are **not** committed to Git.
 
 ---
 
+
+
 ## Step 3 — Start Docker stack
 
 **Before running:** open Docker Desktop and wait until it says **running**.
@@ -228,6 +248,8 @@ These files are **not** committed to Git.
 ```bash
 docker compose up -d --build
 ```
+
+
 
 ### What happens
 
@@ -256,6 +278,8 @@ movielens-app             running
 movielens-spark-worker    running
 ```
 
+
+
 ### Service URLs (from your browser)
 
 
@@ -266,6 +290,8 @@ movielens-spark-worker    running
 | Spark master UI | [http://localhost:8080](http://localhost:8080)   | Spark cluster status |
 | Ollama          | [http://localhost:11434](http://localhost:11434) | LLM API              |
 | App (Streamlit) | [http://localhost:8501](http://localhost:8501)   | Demo UI (Stage 11)   |
+
+
 
 
 ### Docker stack details
@@ -294,6 +320,8 @@ kibana (after ES) · spark → spark-worker · app (after kafka + ES + ollama)
 
 ---
 
+
+
 ## Step 4 — Pull Ollama model
 
 ```bash
@@ -312,6 +340,8 @@ Expected: `llama3.2:3b` listed (~2.0 GB).
 
 ---
 
+
+
 ## Step 5 — Initialize infrastructure
 
 Creates Kafka topic and Elasticsearch indexes:
@@ -319,6 +349,8 @@ Creates Kafka topic and Elasticsearch indexes:
 ```bash
 docker exec movielens-app python scripts/setup_infrastructure.py
 ```
+
+
 
 ### Expected output
 
@@ -340,11 +372,15 @@ Infrastructure setup complete.
 
 ---
 
+
+
 ## Step 6 — Verify all services
 
 ```bash
 docker exec movielens-app python scripts/verify_stack.py
 ```
+
+
 
 ### Expected output
 
@@ -366,7 +402,11 @@ docker exec movielens-app python scripts/validate_schema.py
 
 ---
 
+
+
 ## Step 7 — Run data exploration (Stage 1)
+
+
 
 ### Option A — Local notebook (recommended for exploration)
 
@@ -384,6 +424,8 @@ Open `notebooks/01_data_exploration.ipynb` and select kernel **Python (bigData)*
 See `docs/data_quality_summary.md` for key findings without re-running the notebook.
 
 ---
+
+
 
 ## Step 8 — Review locked schema (Stage 2)
 
@@ -404,6 +446,8 @@ Expected: `Schema validation passed.`
 
 ---
 
+
+
 ## Step 9 — Run sample ETL (Stage 4)
 
 Loads the first **100,000** ratings (configurable via `SAMPLE_RATINGS` in `.env`), transforms them, and writes to all three Elasticsearch indexes.
@@ -413,6 +457,8 @@ Loads the first **100,000** ratings (configurable via `SAMPLE_RATINGS` in `.env`
 ```bash
 docker exec movielens-app python scripts/run_sample_etl.py
 ```
+
+
 
 ### What the pipeline does
 
@@ -427,6 +473,8 @@ docker exec movielens-app python scripts/run_sample_etl.py
   - `movie_ratings_by_rating_year` — stats per `(movie_id, rating_year)`
 7. Save parquet files under `data/processed/`
 8. Bulk-index into Elasticsearch using document IDs from `src/elastic/schema.py`
+
+
 
 ### Expected output
 
@@ -470,6 +518,8 @@ docker exec movielens-app python scripts/run_sample_etl.py --skip-es
 docker exec movielens-app python scripts/run_sample_etl.py --skip-parquet
 ```
 
+
+
 ### Output files
 
 
@@ -481,6 +531,8 @@ docker exec movielens-app python scripts/run_sample_etl.py --skip-parquet
 | `data/processed/sample_movies.parquet`                       | Same as `movies` index                                                                      |
 | `data/processed/sample_movies_by_release_year.parquet`       | Same as release-year index                                                                  |
 | `data/processed/sample_movie_ratings_by_rating_year.parquet` | Same as rating-year index                                                                   |
+
+
 
 
 ### Inspect in Elasticsearch (optional)
@@ -507,6 +559,8 @@ GET movies/_search
 }
 ```
 
+
+
 ### Re-run after code changes
 
 The app container mounts `./src` and `./scripts` as volumes — code changes apply without rebuild. Rebuild only after changing `requirements.txt` or `Dockerfile`:
@@ -531,6 +585,8 @@ Re-running the ETL **upserts** documents (same IDs overwrite existing docs).
 
 ---
 
+
+
 ## Step 10 — Stream ratings into Kafka (Stage 5)
 
 Publishes MovieLens rating rows from `ratings.csv` to the `**raw_ratings**` Kafka topic as JSON messages.
@@ -542,6 +598,8 @@ docker exec movielens-app python scripts/run_producer.py
 docker exec movielens-app python scripts/verify_producer.py
 ```
 
+
+
 ### What the producer does
 
 1. Read `ratings.csv` from `/data/raw/`
@@ -549,6 +607,8 @@ docker exec movielens-app python scripts/verify_producer.py
 3. Publish to topic `raw_ratings` with `movieId` as the message key
 4. In **sample mode** (`DATA_MODE=sample`), send first `SAMPLE_RATINGS` rows (default: 100,000)
 5. In **full mode** (`DATA_MODE=full`), send all ~20M ratings
+
+
 
 ### Expected output
 
@@ -578,6 +638,8 @@ Consumed 5 sample message(s):
 Producer verification passed.
 ```
 
+
+
 ### Optional flags
 
 ```bash
@@ -606,6 +668,8 @@ docker exec movielens-app python scripts/verify_producer.py --sample-messages 10
 
 ---
 
+
+
 ## Step 11 — Run Spark ETL (Stage 6)
 
 Spark reads ratings from **Kafka**, joins static **movies/tags** CSVs, aggregates, and writes to all three Elasticsearch indexes.
@@ -629,6 +693,8 @@ docker exec movielens-spark-worker /opt/spark/bin/spark-submit `
   /opt/spark-jobs/etl_job.py
 ```
 
+
+
 ### What the job does
 
 1. Batch-read all messages from Kafka topic `raw_ratings` (earliest → latest offsets)
@@ -636,6 +702,8 @@ docker exec movielens-spark-worker /opt/spark/bin/spark-submit `
 3. Load `movies.csv` and `tags.csv` from `/data/raw/`
 4. Join, aggregate — same logic as Stage 4
 5. Write to ES via `elasticsearch-spark-30_2.12` connector (upsert by document ID)
+
+
 
 ### Expected output
 
@@ -664,11 +732,15 @@ Spark ETL complete:
 docker exec movielens-app python scripts/verify_spark_etl.py
 ```
 
+
+
 ### Notes
 
 - Spark processes **all messages currently in Kafka**. If you ran the producer twice, counts will be higher (duplicates).
 - Run producer **before** Spark ETL: `run_producer.py` → `run_spark_etl.py`
 - Monitor job progress: [http://localhost:8080](http://localhost:8080) (Spark master UI)
+
+
 
 ### Code locations
 
@@ -682,6 +754,8 @@ docker exec movielens-app python scripts/verify_spark_etl.py
 
 
 ---
+
+
 
 ## Step 12 — Verify Elasticsearch indexes and queries (Stage 7)
 
@@ -697,6 +771,8 @@ docker exec movielens-app python scripts/verify_gold_queries.py
 docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
+
+
 ### What it checks (18 checks)
 
 1. **Index existence** — all three indexes present
@@ -706,6 +782,8 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 -
 5. **Sorting** — `average_rating`, `movie_count`
 6. **Aggregations** — genre averages, release-year cohorts, rating-year trends
 
+
+
 ### Expected output
 
 ```text
@@ -713,15 +791,21 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 -
 Elasticsearch index verification passed.
 ```
 
+
+
 ### Code locations
 
-| File | Purpose |
-|---|---|
-| `src/elastic/verify_indexes.py` | Verification logic |
-| `src/elastic/setup_indexes.py` | Index creation from locked mappings |
-| `scripts/verify_es_indexes.py` | CLI entry point |
+
+| File                            | Purpose                             |
+| ------------------------------- | ----------------------------------- |
+| `src/elastic/verify_indexes.py` | Verification logic                  |
+| `src/elastic/setup_indexes.py`  | Index creation from locked mappings |
+| `scripts/verify_es_indexes.py`  | CLI entry point                     |
+
 
 ---
+
+
 
 ## Step 13 — Verify gold queries (Stage 8)
 
@@ -733,12 +817,16 @@ Runs all 16 manual reference queries from `tests/gold_queries/queries.json` agai
 docker exec movielens-app python scripts/verify_gold_queries.py
 ```
 
+
+
 ### Run a single query
 
 ```powershell
 docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 docker exec movielens-app python scripts/verify_gold_queries.py --id movies_07 --show-response
 ```
+
+
 
 ### Expected output
 
@@ -747,18 +835,24 @@ docker exec movielens-app python scripts/verify_gold_queries.py --id movies_07 -
 Gold query verification passed.
 ```
 
+
+
 ### Files
 
-| File | Purpose |
-|---|---|
-| `tests/gold_queries/catalog.yaml` | Question catalog |
+
+| File                              | Purpose             |
+| --------------------------------- | ------------------- |
+| `tests/gold_queries/catalog.yaml` | Question catalog    |
 | `tests/gold_queries/queries.json` | Verified DSL bodies |
-| `src/elastic/gold_queries.py` | Query runner module |
-| `scripts/verify_gold_queries.py` | CLI entry point |
+| `src/elastic/gold_queries.py`     | Query runner module |
+| `scripts/verify_gold_queries.py`  | CLI entry point     |
+
 
 See also `tests/gold_queries/README.md` for Kibana manual testing.
 
 ---
+
+
 
 ## Step 14 — Natural language queries (Stage 9)
 
@@ -772,6 +866,8 @@ Generate Elasticsearch DSL from plain English using Ollama (`llama3.2:3b`).
 docker exec movielens-app python scripts/run_nl_query.py "Show Comedy movies released after 2000." --show-dsl
 docker exec movielens-app python scripts/run_nl_query.py "What are the 10 highest-rated Comedy movies with at least 100 ratings?" --show-hits 3
 ```
+
+
 
 ### Evaluate against gold questions
 
@@ -791,18 +887,24 @@ Index: movies
 Hits: 3,031  agg_buckets=0
 ```
 
+
+
 ### Files
 
-| File | Purpose |
-|---|---|
-| `src/ai/prompt.py` | System prompt + schema |
-| `src/ai/ollama_client.py` | Ollama HTTP client |
-| `src/ai/parser.py` | JSON / DSL parser |
-| `src/ai/generator.py` | Generate + execute queries |
-| `scripts/run_nl_query.py` | CLI for ad-hoc questions |
-| `scripts/evaluate_ai_queries.py` | Gold-question evaluation |
+
+| File                             | Purpose                    |
+| -------------------------------- | -------------------------- |
+| `src/ai/prompt.py`               | System prompt + schema     |
+| `src/ai/ollama_client.py`        | Ollama HTTP client         |
+| `src/ai/parser.py`               | JSON / DSL parser          |
+| `src/ai/generator.py`            | Generate + execute queries |
+| `scripts/run_nl_query.py`        | CLI for ad-hoc questions   |
+| `scripts/evaluate_ai_queries.py` | Gold-question evaluation   |
+
 
 ---
+
+
 
 ## Step 15 — Verify query validator (Stage 10)
 
@@ -812,6 +914,8 @@ Ensures gold queries pass validation and unsafe DSL is rejected before Elasticse
 docker exec movielens-app python scripts/verify_query_validator.py
 ```
 
+
+
 ### Expected output
 
 ```text
@@ -819,20 +923,26 @@ docker exec movielens-app python scripts/verify_query_validator.py
 Query validator verification passed.
 ```
 
+
+
 ### Files
 
-| File | Purpose |
-|---|---|
-| `src/ai/validator.py` | Schema + safety validation |
+
+| File                                | Purpose                          |
+| ----------------------------------- | -------------------------------- |
+| `src/ai/validator.py`               | Schema + safety validation       |
 | `scripts/verify_query_validator.py` | Gold pass + rejection-case tests |
+
 
 The validator runs automatically in `generate_query()` and `execute_query()` before any ES call.
 
 ---
 
+
+
 ## Step 16 — Streamlit demo UI (Stage 11)
 
-Open the natural-language search interface at **http://localhost:8501**.
+Open the natural-language search interface at **[http://localhost:8501](http://localhost:8501)**.
 
 **Prerequisites:** Stack running, Ollama model pulled, ETL data loaded (Steps 10–11).
 
@@ -840,7 +950,7 @@ Open the natural-language search interface at **http://localhost:8501**.
 docker compose up -d --build app
 ```
 
-Then open http://localhost:8501 in your browser.
+Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ### What the UI shows
 
@@ -850,12 +960,33 @@ Then open http://localhost:8501 in your browser.
 4. Result table (hits) or aggregation JSON
 5. Optional AI summary (sidebar checkbox; labeled as LLM-generated)
 
+
+
 ### Files
 
-| File | Purpose |
-|---|---|
-| `src/app/streamlit_app.py` | Streamlit UI |
-| `Dockerfile` | Starts Streamlit on port 8501 |
+
+| File                       | Purpose                       |
+| -------------------------- | ----------------------------- |
+| `src/app/streamlit_app.py` | Streamlit UI                  |
+| `Dockerfile`               | Starts Streamlit on port 8501 |
+
+
+---
+
+## Step 17 — Kibana dashboard (Stage 12)
+
+Create data views, charts, and insights in Kibana.
+
+**Prerequisites:** ETL data loaded (Steps 10–11), Kibana running.
+
+```powershell
+docker exec movielens-app python scripts/setup_kibana.py
+docker exec movielens-app python scripts/verify_kibana.py
+```
+
+Open http://localhost:5601 → **Dashboards** → **MovieLens Analytics**
+
+Insights document: `kibana/insights.md` (regenerated on each setup run).
 
 ---
 
@@ -908,6 +1039,8 @@ curl http://localhost:9200/movie_ratings_by_rating_year/_count
 
 ---
 
+
+
 ## Troubleshooting
 
 
@@ -933,6 +1066,8 @@ curl http://localhost:9200/movie_ratings_by_rating_year/_count
 
 
 ---
+
+
 
 ## Project structure (current)
 
@@ -972,6 +1107,8 @@ bigData/
 ```
 
 ---
+
+
 
 ## Quick reference — full setup sequence
 
@@ -1020,6 +1157,8 @@ When all steps pass, the full sample pipeline and gold queries are ready. **Next
 
 ---
 
+
+
 ## Command cheat sheet — copy/paste restore
 
 Use this section to **restore every manual command** in one place. All commands are run from the project root (`bigData/`) in **Commander or PowerShell** on Windows unless noted.
@@ -1027,17 +1166,20 @@ Use this section to **restore every manual command** in one place. All commands 
 ### Where commands run
 
 
-| You type on | Command pattern | Runs inside |
-|---|---|---|
-| Host terminal | `docker exec movielens-app ...` | `movielens-app` container |
-| Host terminal | `docker exec movielens-ollama ...` | `ollama` container |
-| Host terminal | `python scripts/run_spark_etl.py` | Host script → submits to `movielens-spark-worker` |
-| Host terminal | `docker compose ...` | Docker Desktop (orchestrates containers) |
-| Host terminal | `curl http://localhost:9200/...` | Your machine → Elasticsearch port |
+| You type on   | Command pattern                    | Runs inside                                       |
+| ------------- | ---------------------------------- | ------------------------------------------------- |
+| Host terminal | `docker exec movielens-app ...`    | `movielens-app` container                         |
+| Host terminal | `docker exec movielens-ollama ...` | `ollama` container                                |
+| Host terminal | `python scripts/run_spark_etl.py`  | Host script → submits to `movielens-spark-worker` |
+| Host terminal | `docker compose ...`               | Docker Desktop (orchestrates containers)          |
+| Host terminal | `curl http://localhost:9200/...`   | Your machine → Elasticsearch port                 |
+
 
 You never need `docker exec -it ... bash` for normal operation.
 
 ---
+
+
 
 ### A — First-time setup (once per machine / after clone)
 
@@ -1055,6 +1197,8 @@ docker exec movielens-app python scripts/validate_schema.py
 
 ---
 
+
+
 ### B — Recovery after `docker compose down -v` (wipes all data)
 
 ```powershell
@@ -1068,6 +1212,8 @@ docker exec movielens-app python scripts/verify_stack.py
 Then re-run the pipeline (section C or D below).
 
 ---
+
+
 
 ### C — Main pipeline: Kafka → Spark → Elasticsearch (Stages 5–6)
 
@@ -1100,6 +1246,8 @@ If `python` is not found on host, try: `py scripts/run_spark_etl.py`
 
 ---
 
+
+
 ### D — Optional: Stage 4 pandas ETL (legacy / skip if using Spark)
 
 Only needed if you want ES data **without** Kafka + Spark:
@@ -1110,6 +1258,8 @@ docker exec movielens-app python scripts/verify_sample_etl.py
 ```
 
 ---
+
+
 
 ### E — Day-to-day stack control
 
@@ -1124,6 +1274,8 @@ docker compose logs movielens-kafka
 ```
 
 ---
+
+
 
 ### F — Verify / inspect
 
@@ -1142,9 +1294,11 @@ curl http://localhost:9200/movies_by_release_year/_count
 curl http://localhost:9200/movie_ratings_by_rating_year/_count
 ```
 
-Browser URLs: ES http://localhost:9200 · Kibana http://localhost:5601 · Spark UI http://localhost:8080
+Browser URLs: ES [http://localhost:9200](http://localhost:9200) · Kibana [http://localhost:5601](http://localhost:5601) · Spark UI [http://localhost:8080](http://localhost:8080)
 
 ---
+
+
 
 ### G — Optional flags (quick tests)
 
@@ -1157,6 +1311,8 @@ docker exec movielens-app python scripts/verify_producer.py --sample-messages 10
 
 ---
 
+
+
 ### H — Local notebook (Stage 1, optional)
 
 ```powershell
@@ -1167,6 +1323,8 @@ python -m venv .venv
 ```
 
 ---
+
+
 
 ## Checklist — what you should have when done
 
@@ -1188,7 +1346,11 @@ python -m venv .venv
 
 ---
 
+
+
 # Project Stages
+
+
 
 ## Stage 0 — Project Repository and Development Environment
 
@@ -1207,6 +1369,8 @@ python -m venv .venv
 - Download MovieLens 20M locally into `data/raw/`.
 - Keep the large raw dataset outside Git.
 - Verify `docker compose up` starts all services on one laptop.
+
+
 
 ### Suggested project structure
 
@@ -1236,6 +1400,8 @@ movielens-bigdata-ai/
 └── README.md
 ```
 
+
+
 ### End result
 
 All team members can clone the repo, mount the dataset, and run `docker compose up`.
@@ -1249,6 +1415,8 @@ Follow **Steps 1–3** in [Full Setup and Run Instructions](#full-setup-and-run-
 No. Do this once as a team.
 
 ---
+
+
 
 ## Stage 1 — Explore and Understand MovieLens
 
@@ -1265,6 +1433,8 @@ rating
 timestamp
 ```
 
+
+
 ### `movies.csv`
 
 ```text
@@ -1272,6 +1442,8 @@ movieId
 title
 genres
 ```
+
+
 
 ### `tags.csv`
 
@@ -1282,7 +1454,11 @@ tag
 timestamp
 ```
 
+
+
 ### Tasks
+
+
 
 #### Ratings analysis
 
@@ -1298,6 +1474,8 @@ timestamp
 - Ratings per user.
 - Derive `rating_year` from `timestamp` for time-trend analysis.
 
+
+
 #### Movies analysis
 
 - Number of movies.
@@ -1307,6 +1485,8 @@ timestamp
 - Parse `genres` separated by `|`.
 - Count movies per genre.
 - Check movies with `(no genres listed)`.
+
+
 
 #### Tags analysis
 
@@ -1319,6 +1499,8 @@ timestamp
 - Tags per movie.
 - Timestamp range.
 
+
+
 #### Cross-file checks
 
 - Verify `movieId` joins correctly.
@@ -1326,6 +1508,8 @@ timestamp
 - Movies with no tags.
 - Ratings referencing unknown movies.
 - Tags referencing unknown movies.
+
+
 
 ### End result
 
@@ -1336,6 +1520,8 @@ A data-exploration notebook and a short data-quality summary.
 1. Follow **Step 7** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
 2. Open `notebooks/01_data_exploration.ipynb` and run all cells.
 3. Read findings in `docs/data_quality_summary.md`.
+
+
 
 ### Parallel work
 
@@ -1350,6 +1536,8 @@ Suggested split (up to 3 members):
 Then combine conclusions together.
 
 ---
+
+
 
 ## Stage 2 — Define the Final Data Model
 
@@ -1379,6 +1567,8 @@ Supports questions such as:
 > Show Comedy movies released after 2000.
 
 > What are the 10 highest-rated Comedy movies with at least 5,000 ratings?
+
+
 
 ### Index 2: `movies_by_release_year` (release-year cohorts)
 
@@ -1423,6 +1613,8 @@ Supports questions such as:
 
 > How did rating activity for Toy Story change over time?
 
+
+
 ### Field naming rules (important for the LLM)
 
 
@@ -1442,6 +1634,8 @@ Never use a generic `year` field — always use `release_year` or `rating_year`.
 - Which Natural Language questions the system must support.
 - Spark → Elasticsearch direct-write configuration (index names, id fields).
 
+
+
 ### End result
 
 A documented schema shared by Spark, Elasticsearch, and the AI layer.
@@ -1450,11 +1644,15 @@ A documented schema shared by Spark, Elasticsearch, and the AI layer.
 
 1. Follow **Step 8** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
 
+
+
 ### Parallel work
 
 No. This is a synchronization point for the whole team.
 
 ---
+
+
 
 ## Stage 3 — Docker and Infrastructure
 
@@ -1475,6 +1673,8 @@ All components run in Docker on a single laptop. Minimize container count and me
 | **app**           | Python — producer, Streamlit UI, AI client, validator | ~512 MB                  |
 
 
+
+
 ### Design choices to reduce footprint
 
 - Kafka KRaft instead of Kafka + Zookeeper (−1 container).
@@ -1482,6 +1682,8 @@ All components run in Docker on a single laptop. Minimize container count and me
 - One combined **app** container instead of separate producer/UI/AI services.
 - Raw MovieLens data mounted as a volume (`./data/raw:/data`).
 - Pull one small Ollama model: `llama3.2:3b`.
+
+
 
 ### Components
 
@@ -1491,6 +1693,8 @@ All components run in Docker on a single laptop. Minimize container count and me
 - Spark
 - Ollama
 - App (Python)
+
+
 
 ### Tasks
 
@@ -1503,6 +1707,8 @@ All components run in Docker on a single laptop. Minimize container count and me
 - Verify Kibana connects to Elasticsearch. ✅
 - Pull Ollama model: `docker exec movielens-ollama ollama pull llama3.2:3b`. ✅
 - Document startup order and expected ports. ✅
+
+
 
 ### How to run (completed)
 
@@ -1526,6 +1732,8 @@ Yes. Can be done in parallel with Stage 4 after the schema is agreed.
 
 ---
 
+
+
 ## Stage 4 — Build a Small ETL Prototype
 
 **Current status:** complete.
@@ -1537,6 +1745,8 @@ Use a sample, for example:
 ```text
 100,000 ratings
 ```
+
+
 
 ### Tasks
 
@@ -1551,6 +1761,8 @@ Use a sample, for example:
 - Calculate release-year cohort stats for `movies_by_release_year`. ✅
 - Calculate `(movie_id, rating_year)` stats for `movie_ratings_by_rating_year`. ✅
 - Write sample output directly to Elasticsearch. ✅
+
+
 
 ### How to run (completed)
 
@@ -1567,6 +1779,8 @@ A small processed dataset loaded into all three Elasticsearch indexes, matching 
 Yes. Can be done in parallel with Stage 3.
 
 ---
+
+
 
 ## Stage 5 — Kafka Producer
 
@@ -1592,6 +1806,8 @@ The producer runs inside the **app** container (or is triggered from it).
 raw_ratings
 ```
 
+
+
 ### Example Kafka message
 
 ```json
@@ -1614,6 +1830,8 @@ raw_ratings
 - Add configurable **sample / full** modes via environment variable. ✅
 - Verify messages can be consumed. ✅
 
+
+
 ### How to run (completed)
 
 Follow **Step 10** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
@@ -1627,6 +1845,8 @@ Real MovieLens rating events are entering Kafka.
 Yes. Can overlap with Stage 6 once the schema and Kafka contract are fixed.
 
 ---
+
+
 
 ## Stage 6 — Spark ETL Pipeline
 
@@ -1660,12 +1880,16 @@ Aggregate by release_year → write to index: movies_by_release_year
 Aggregate by (movie_id, rating_year) → write to index: movie_ratings_by_rating_year
 ```
 
+
+
 ### Spark → Elasticsearch direct write
 
 - Use `org.elasticsearch:elasticsearch-spark-30_2.12` (match Spark/Scala versions).
 - Configure ES host, port, and index names via Spark config or `docker-compose` environment.
 - Set document IDs explicitly (`movie_id` for `movies`; composite key for `movie_ratings_by_rating_year`).
 - Test with the Stage 4 sample before running the full 20M dataset.
+
+
 
 ### Tasks
 
@@ -1680,6 +1904,8 @@ Aggregate by (movie_id, rating_year) → write to index: movie_ratings_by_rating
 - Write each output directly to its Elasticsearch index. ✅
 - Handle missing/invalid records. ✅
 - Support sample/full mode aligned with the Kafka producer. ✅
+
+
 
 ### How to run (completed)
 
@@ -1697,6 +1923,8 @@ Partially. Kafka producer and Spark ETL can be developed by different members af
 
 ---
 
+
+
 ## Stage 7 — Elasticsearch Indexes and Mappings
 
 **Current status:** complete.
@@ -1709,7 +1937,11 @@ movies_by_release_year
 movie_ratings_by_rating_year
 ```
 
+
+
 ### Mapping reference
+
+
 
 #### `movies`
 
@@ -1724,6 +1956,8 @@ tags             keyword
 tag_count        integer
 ```
 
+
+
 #### `movies_by_release_year`
 
 ```text
@@ -1732,6 +1966,8 @@ movie_count          integer
 total_rating_count   integer
 average_rating       float
 ```
+
+
 
 #### `movie_ratings_by_rating_year`
 
@@ -1743,6 +1979,8 @@ rating_count     integer
 average_rating   float
 ```
 
+
+
 ### Tasks
 
 - Define mappings for all three indexes. ✅
@@ -1752,6 +1990,8 @@ average_rating   float
 - Verify numeric ranges and sorting. ✅
 - Verify aggregations (genre averages, release-year cohorts, rating-year trends). ✅
 - Verify tag searching. ✅
+
+
 
 ### How to run (completed)
 
@@ -1765,6 +2005,8 @@ docker exec movielens-app python scripts/verify_gold_queries.py
 docker exec movielens-app python scripts/verify_gold_queries.py --id movies_02 --show-hits 3
 ```
 
+
+
 ### End result
 
 Elasticsearch contains queryable MovieLens data across all three indexes.
@@ -1774,6 +2016,8 @@ Elasticsearch contains queryable MovieLens data across all three indexes.
 Yes. Mappings can be developed using Stage 4 sample output while Spark is being completed.
 
 ---
+
+
 
 ## Stage 8 — Build Manual Elasticsearch Queries
 
@@ -1787,6 +2031,8 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 
 ### Example questions
 
+
+
 #### Filters and sorting (`movies` index)
 
 > Show Comedy movies released after 2000.
@@ -1797,11 +2043,15 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 
 > Show highly rated Horror movies tagged "funny".
 
+
+
 #### Aggregations (`movies` index)
 
 > Which genres have the highest average rating?
 
 > Compare the average ratings of Action and Comedy movies.
+
+
 
 #### Release year (`movies` or `movies_by_release_year`)
 
@@ -1809,11 +2059,15 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 
 > Which release decades have the highest average rating?
 
+
+
 #### Rating activity over time (`movie_ratings_by_rating_year`)
 
 > What were the most popular movies **by rating activity** in 2010?
 
 > Show how rating activity changed for a specific movie across years.
+
+
 
 ### Tasks
 
@@ -1823,6 +2077,8 @@ Include queries for **all three indexes** and both **filter/sort** and **aggrega
 - Verify each query against Elasticsearch. ✅
 - Save cases in `tests/gold_queries/` for later evaluation. ✅
 
+
+
 ### How to run (completed)
 
 Follow **Step 13** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
@@ -1830,6 +2086,8 @@ Follow **Step 13** in [Full Setup and Run Instructions](#full-setup-and-run-inst
 ```powershell
 docker exec movielens-app python scripts/verify_gold_queries.py
 ```
+
+
 
 ### End result
 
@@ -1840,6 +2098,8 @@ A tested query set independent of the LLM.
 Yes. Can be performed while Spark and Elasticsearch integration are being completed.
 
 ---
+
+
 
 ## Stage 9 — AI: Natural Language → Elasticsearch Query
 
@@ -1853,7 +2113,11 @@ This is the graded AI capability.
 - **Model:** `llama3.2:3b` (small, runs on a laptop)
 - **Endpoint:** `http://ollama:11434` (from app container)
 
+
+
 ### Input to the LLM
+
+
 
 #### User question
 
@@ -1861,6 +2125,8 @@ This is the graded AI capability.
 What are the 10 highest-rated Comedy movies
 with at least 5,000 ratings?
 ```
+
+
 
 #### Elasticsearch schema (provide all three indexes)
 
@@ -1888,6 +2154,8 @@ Index: movie_ratings_by_rating_year
   average_rating: float
 ```
 
+
+
 #### Instructions for the LLM
 
 - Generate Elasticsearch DSL JSON only.
@@ -1895,6 +2163,8 @@ Index: movie_ratings_by_rating_year
 - Use `release_year` for when a movie came out.
 - Use `rating_year` for when ratings were submitted.
 - Include `aggs` for aggregation questions (genres, decades, comparisons).
+
+
 
 ### Example output (filter + sort on `movies`)
 
@@ -1913,6 +2183,8 @@ Index: movie_ratings_by_rating_year
 }
 ```
 
+
+
 ### Example output (aggregation on `movies`)
 
 ```json
@@ -1929,6 +2201,8 @@ Index: movie_ratings_by_rating_year
 }
 ```
 
+
+
 ### Tasks
 
 - Integrate Ollama client in `src/ai/`. ✅
@@ -1937,6 +2211,8 @@ Index: movie_ratings_by_rating_year
 - Parse model output (strip markdown fences if present). ✅
 - Handle malformed output gracefully. ✅
 - Test against the Stage 8 gold query set. ✅
+
+
 
 ### How to run (completed)
 
@@ -1947,6 +2223,8 @@ docker exec movielens-app python scripts/run_nl_query.py "Show Comedy movies rel
 docker exec movielens-app python scripts/evaluate_ai_queries.py
 ```
 
+
+
 ### End result
 
 Natural-language questions reliably generate Elasticsearch queries against the correct index.
@@ -1956,6 +2234,8 @@ Natural-language questions reliably generate Elasticsearch queries against the c
 Yes. Prompt design and gold queries can begin before the full dataset pipeline is finished.
 
 ---
+
+
 
 ## Stage 10 — Query Validator
 
@@ -1981,6 +2261,8 @@ Reasonable result size?
 Execute query
 ```
 
+
+
 ### Tasks
 
 - Validate JSON syntax. ✅ (parser + validator)
@@ -1992,6 +2274,8 @@ Execute query
 - Return useful errors to the UI. ✅
 - Log rejected queries for testing. ✅
 
+
+
 ### How to run (completed)
 
 Follow **Step 15** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
@@ -1999,6 +2283,8 @@ Follow **Step 15** in [Full Setup and Run Instructions](#full-setup-and-run-inst
 ```powershell
 docker exec movielens-app python scripts/verify_query_validator.py
 ```
+
+
 
 ### End result
 
@@ -2009,6 +2295,8 @@ Only safe, valid search queries reach Elasticsearch.
 Yes. Can be developed in parallel with Stage 9.
 
 ---
+
+
 
 ## Stage 11 — Demo Application
 
@@ -2030,6 +2318,8 @@ Keep the interface simple. Runs locally in the **app** Docker container (Streaml
 └──────────────────────────────────────────────┘
 ```
 
+
+
 ### Display
 
 1. User question.
@@ -2037,6 +2327,8 @@ Keep the interface simple. Runs locally in the **app** Docker container (Streaml
 3. Generated Elasticsearch query.
 4. Real returned results.
 5. Optional short explanation (clearly labeled as LLM-generated).
+
+
 
 ### Tasks
 
@@ -2047,15 +2339,15 @@ Keep the interface simple. Runs locally in the **app** Docker container (Streaml
 - Display results clearly (table for hits, JSON for aggregations). ✅
 - Handle errors (LLM failure, invalid query, ES timeout). ✅
 
+
+
 ### How to run (completed)
 
 Follow **Step 16** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
 
-```powershell
 docker compose up -d --build app
-```
 
-Open http://localhost:8501
+Open [http://localhost:8501](http://localhost:8501)
 
 ### End result
 
@@ -2067,7 +2359,11 @@ Yes. Can run in parallel with Stage 12.
 
 ---
 
+
+
 ## Stage 12 — Kibana and Data Insights
+
+**Current status:** complete.
 
 Create a small dashboard showing that the Big Data pipeline produces useful analytical results.
 
@@ -2081,11 +2377,24 @@ Create a small dashboard showing that the Big Data pipeline produces useful anal
 - Most common tags.
 - Average rating vs. number of ratings.
 
+
+
 ### Tasks
 
-- Create Kibana data views for all three indexes.
-- Build 4–6 useful charts.
-- Extract 3–5 meaningful observations from the actual data.
+- Create Kibana data views for all three indexes. ✅
+- Build 4–6 useful charts. ✅ (6 charts)
+- Extract 3–5 meaningful observations from the actual data. ✅ (`kibana/insights.md`)
+
+### How to run (completed)
+
+Follow **Step 17** in [Full Setup and Run Instructions](#full-setup-and-run-instructions).
+
+```powershell
+docker exec movielens-app python scripts/setup_kibana.py
+docker exec movielens-app python scripts/verify_kibana.py
+```
+
+Open http://localhost:5601/app/dashboards#/view/movielens-analytics
 
 ### End result
 
@@ -2096,6 +2405,8 @@ A dashboard and several evidence-based insights for the presentation.
 Yes. Fully parallel with the demo/UI work.
 
 ---
+
+
 
 ## Stage 13 — Full Integration
 
@@ -2115,6 +2426,8 @@ Spark ETL → direct write to Elasticsearch
 Streamlit App
 ```
 
+
+
 ### Test AI flow
 
 ```text
@@ -2131,6 +2444,8 @@ Elasticsearch
 Real Results
 ```
 
+
+
 ### Tasks
 
 - Run the complete stack on one laptop.
@@ -2141,6 +2456,8 @@ Real Results
 - Test restart behavior (`docker compose down && docker compose up`).
 - Document startup order and sample/full mode in `README.md`.
 
+
+
 ### End result
 
 A complete working system running locally.
@@ -2150,6 +2467,8 @@ A complete working system running locally.
 No. This is a whole-team synchronization point.
 
 ---
+
+
 
 ## Stage 14 — Evaluate the AI Component
 
@@ -2164,6 +2483,8 @@ Suggested categories:
 5 rating_year / tag questions (movie_ratings_by_rating_year / movies)
 ```
 
+
+
 ### Evaluation table
 
 
@@ -2175,6 +2496,8 @@ Suggested categories:
 | Popular by rating activity in 2010 | movie_ratings_by_rating_year | ✅            | ✅                     | ✅               |
 | Best movies released in 2010       | movies                       | ✅            | ✅                     | ✅               |
 | ...                                | ...                          | ...          | ...                   | ...             |
+
+
 
 
 ### Metrics
@@ -2198,9 +2521,15 @@ Yes. Evaluation questions/results can be divided among team members.
 
 ---
 
+
+
 ## Stage 15 — Deliverables and Presentation
 
+
+
 ### Required deliverables
+
+
 
 #### Source code
 
@@ -2208,6 +2537,8 @@ Yes. Evaluation questions/results can be divided among team members.
 - Clean project structure.
 - `README.md` with `docker compose up` instructions.
 - `.env.example` documenting all configuration variables.
+
+
 
 #### Design document (1–2 pages)
 
@@ -2219,6 +2550,8 @@ Yes. Evaluation questions/results can be divided among team members.
 - Technologies and why each was chosen.
 - AI capability (NL → ES DSL with validation).
 - Main trade-offs (simulated streaming, single-node ES, small LLM).
+
+
 
 #### Presentation (5–10 minutes)
 
@@ -2233,6 +2566,8 @@ Yes. Evaluation questions/results can be divided among team members.
 9. Evaluation/results.
 10. Challenges and trade-offs.
 
+
+
 #### Demo
 
 Prepare 3–4 reliable questions in advance:
@@ -2241,6 +2576,8 @@ Prepare 3–4 reliable questions in advance:
 - Most popular movies by rating activity in a specific year (`movie_ratings_by_rating_year`).
 - Movies associated with a specific tag (`movies`).
 - Genre comparison or release-year cohort question (`movies` / `movies_by_release_year`).
+
+
 
 ### End result
 
@@ -2260,6 +2597,8 @@ Final review should be done by the whole team.
 
 ---
 
+
+
 # Recommended Team Split (up to 3 members)
 
 
@@ -2274,7 +2613,11 @@ If the team has fewer than 3 members, combine adjacent tracks (e.g. A takes Data
 
 ---
 
+
+
 # Parallel Development Plan
+
+
 
 ## Phase 1 — Together
 
@@ -2305,11 +2648,15 @@ Everyone should understand and agree on these.
                        INTEGRATION
 ```
 
+
+
 ### Track A — Data
 
 - Kafka producer (sample/full mode).
 - Spark ETL pipeline.
 - Direct write to all three ES indexes.
+
+
 
 ### Track B — Search
 
@@ -2317,12 +2664,16 @@ Everyone should understand and agree on these.
 - Sample loading and query verification.
 - Kibana dashboard.
 
+
+
 ### Track C — AI
 
 - Gold natural-language questions and reference DSL.
 - Ollama integration (`llama3.2:3b`).
 - Query validator.
 - Streamlit demo UI.
+
+
 
 ## Phase 3 — Together
 
@@ -2335,6 +2686,8 @@ Stage 15 — Final review and demo
 All team members should test and understand the complete project.
 
 ---
+
+
 
 # Critical Path
 
@@ -2360,7 +2713,11 @@ The **Data Model** is the main synchronization point. Do not let development tra
 
 ---
 
+
+
 # Recommended Project Scope
+
+
 
 ## Include
 
@@ -2374,6 +2731,8 @@ The **Data Model** is the main synchronization point. Do not let development tra
 - Query validation
 - Streamlit demo UI (local laptop)
 - AI evaluation set (~20 questions)
+
+
 
 ## Do not include unless there is extra time
 

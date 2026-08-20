@@ -142,6 +142,7 @@ services:
       - ./src:/app/src
       - ./scripts:/app/scripts
       - ./tests:/app/tests
+      - ./kibana:/app/kibana
     depends_on:
       kafka:
         condition: service_healthy

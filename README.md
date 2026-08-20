@@ -20,7 +20,8 @@ Big Data pipeline over **MovieLens 20M** with Kafka, Spark, Elasticsearch, and n
 | 9 | NL → ES query (Ollama) | ✅ |
 | 10 | Query validator | ✅ |
 | 11 | Streamlit demo UI | ✅ |
-| 12+ | Kibana, full 20M | ⬜ **Next** |
+| 12 | Kibana dashboards | ✅ |
+| 13+ | Full 20M, evaluation | ⬜ **Next** |
 
 ## Prerequisites
 
@@ -182,6 +183,15 @@ docker compose up -d --build app
 
 Type a question (or pick an example from the sidebar) and click **Search**. The app shows the validated Elasticsearch query and results.
 
+### 15. Kibana dashboards (Stage 12)
+
+```powershell
+docker exec movielens-app python scripts/setup_kibana.py
+docker exec movielens-app python scripts/verify_kibana.py
+```
+
+Open http://localhost:5601 → **Dashboards** → **MovieLens Analytics**. See `kibana/insights.md` for data observations.
+
 See [`docs/plan.md`](docs/plan.md) for expected output, flags, and troubleshooting.
 
 ## Project structure
@@ -212,7 +222,12 @@ bigData/
 │   ├── verify_gold_queries.py   # Stage 8 gold query runner
 │   ├── run_nl_query.py          # Stage 9 NL → ES query
 │   ├── evaluate_ai_queries.py   # Stage 9 AI evaluation
-│   └── verify_query_validator.py # Stage 10 validator checks
+│   ├── verify_query_validator.py # Stage 10 validator checks
+│   ├── setup_kibana.py          # Stage 12 Kibana dashboard setup
+│   └── verify_kibana.py         # Stage 12 Kibana verification
+├── kibana/
+│   ├── README.md                # Stage 12 dashboard guide
+│   └── insights.md              # Generated data observations
 ├── tests/
 │   └── gold_queries/            # Stage 8 reference queries
 │       ├── catalog.yaml
@@ -226,6 +241,7 @@ bigData/
 │   ├── ai/               # NL → Elasticsearch query (Stage 9)
 │   ├── app/              # Streamlit demo (Stage 11)
 │   │   └── streamlit_app.py
+│   ├── kibana/           # Kibana dashboard setup (Stage 12)
 │   └── config.py         # Shared configuration
 ├── docker-compose.yml
 ├── Dockerfile
